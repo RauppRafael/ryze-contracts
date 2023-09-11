@@ -60,3 +60,20 @@
 | RyzeLiquidityInitializer    | [`0x5afe00003cf348fe8137d55ce0938806add36661`](https://testnet.snowtrace.io/address/0x5afe00003cf348fe8137d55ce0938806add36661) | 
 | RyzeWhitelist               | [`0x5afe000088b1eca1cedab15383bf637c6404da96`](https://testnet.snowtrace.io/address/0x5afe000088b1eca1cedab15383bf637c6404da96) | 
 | EthDaiPair                  | [`0x8454c7e51bfe8f8fc05e98bf75311182c1057889`](https://testnet.snowtrace.io/address/0x8454c7e51bfe8f8fc05e98bf75311182c1057889) | 
+
+## Deploying / Running tests
+
+- Configure the .env file
+- Configure the .explorer-keys.json by adding the explorer api key of the desired chains
+
+### Test
+
+```bash
+npm run test
+```
+
+### Deploy
+
+```bash
+npm run deploy
+```
