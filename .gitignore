@@ -1,0 +1,19 @@
+node_modules/
+.idea
+.env
+.explorer-keys.json
+
+# Generated files
+cache/
+artifacts/
+types/
+abi/
+
+cache-opencl.*
+coverage.json
+coverage/
+*.cl
+*.exe
+*.x64
+.vanity
+.openzeppelin
