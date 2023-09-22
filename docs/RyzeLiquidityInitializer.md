@@ -24,10 +24,10 @@ contract RyzeTokenConverter tokenConverter
 contract RyzeRouter router
 ```
 
-### allocationRewardToken
+### allocationToken
 
 ```solidity
-contract IERC1155Upgradeable allocationRewardToken
+contract IERC1155Upgradeable allocationToken
 ```
 
 ### stablecoin
@@ -39,7 +39,7 @@ contract IERC20Upgradeable stablecoin
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _router, address _allocator, address _tokenConverter, address _allocationRewardToken, address _stablecoin) public
+function initialize(address _owner, address _router, address _allocator, address _tokenConverter, address _allocationToken, address _stablecoin) public
 ```
 
 ### allocation
@@ -89,7 +89,7 @@ Computes the amount of stablecoins needed to initialize liquidity for a specific
 function claimAndAddLiquidity(uint256 _tokenId, uint256 _stablecoinToRealEstateRatioBasisPoints) external
 ```
 
-Claims the allocation reward, converts it into real estate ERC20, and adds it as liquidity.
+Claims the allocation token, converts it into real estate ERC20, and adds it as liquidity.
 
 #### Parameters
 

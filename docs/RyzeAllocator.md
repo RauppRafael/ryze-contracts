@@ -128,6 +128,14 @@ function initialize(address _owner, address _whitelist, address _router, address
 function _initializeAllocation(uint256 _tokenId) internal
 ```
 
+_Internal function to initialize allocation for a given token ID._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenId | uint256 | The ID of the token for which allocation is to be initialized. |
+
 ### allocate
 
 ```solidity
@@ -182,6 +190,23 @@ _This function first converts the received Ether to stablecoins using the router
 | _tokenId | uint256 | The ID of the token to be allocated. |
 | _minAmount | uint256 | The minimum amount of tokens expected to receive in the conversion. |
 | _referrer | address | The address of the referrer. |
+
+### _mintAllocation
+
+```solidity
+function _mintAllocation(uint256 _tokenId, uint256 _requestedAmount, address _user, bool _isReward) internal
+```
+
+_Internal function to mint the given allocation amount for a specific token to a user or referrer._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenId | uint256 | The ID of the token for which the allocation is minted. |
+| _requestedAmount | uint256 | The amount of tokens to mint. |
+| _user | address | The address of the user to receive the minted allocation. |
+| _isReward | bool | Indicates if the minted allocation is a reward. |
 
 ### burnAllocation
 
