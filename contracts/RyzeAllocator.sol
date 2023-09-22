@@ -80,10 +80,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     }
 
     function _initializeAllocation(uint _tokenId) internal {
-        _allocateForFree(
+        _mintAllocation(
             _tokenId,
             tokenDatabase.maxSupply(_tokenId) * initialLiquidityBasisPoints / 10_000,
-            liquidityInitializer
+            liquidityInitializer,
+            false
         );
     }
 
@@ -139,11 +140,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         path[0] = router.WETH();
         path[1] = address(stablecoin);
 
-        uint availableAmount = _getAvailableAllocationAmount(_tokenId, _minAmount) * 1e18;
+        uint realAmount = _min(_minAmount, _getAvailableAllocationAmount(_tokenId)) * 1e18;
 
-        if (availableAmount < _minAmount) {
+        if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
-                availableAmount,
+                realAmount,
                 path,
                 address(this),
                 block.timestamp
@@ -172,7 +173,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
 
     function _allocate(
         uint _tokenId,
-        uint _amount,
+        uint _requestedAmount,
         address _referrer,
         bool _collectPayment
     ) private {
@@ -188,43 +189,46 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         if (allocationState != AllocationState.PRE_SALE)
             revert InvalidAllocationState(AllocationState.PRE_SALE, allocationState);
 
-        uint amount = _getAvailableAllocationAmount(_tokenId, _amount);
+        uint realAmount = _min(_requestedAmount, _getAvailableAllocationAmount(_tokenId));
 
-        if (amount < _amount)
-            _setAllocationState(_tokenId, AllocationState.PENDING);
-
-        if (amount == 0)
+        if (realAmount == 0)
             revert InvalidAmount();
 
         if (_collectPayment)
-            stablecoin.safeTransferFrom(msg.sender, address(this), amount * 1e18);
+            stablecoin.safeTransferFrom(msg.sender, address(this), realAmount * 1e18);
 
-        allocationInfo.totalAllocated += amount;
-
-        allocationToken.mint(msg.sender, _tokenId, amount);
+        _mintAllocation(_tokenId, realAmount, msg.sender, false);
 
         if (_referrer != address(0) && _referrer != msg.sender) {
-            _allocateForFree(
+            _mintAllocation(
                 _tokenId,
-                _amount * referralRewardBasisPoints / 10_000,
-                _referrer
+                realAmount * referralRewardBasisPoints / 10_000,
+                _referrer,
+                true
             );
         }
     }
 
-    function _allocateForFree(uint _tokenId, uint _amount, address _user) private {
-        uint amount = _getAvailableAllocationAmount(_tokenId, _amount);
+    function _mintAllocation(
+        uint _tokenId,
+        uint _requestedAmount,
+        address _user,
+        bool _isReward
+    ) internal {
+        uint availableAllocations = _getAvailableAllocationAmount(_tokenId);
+        uint realAmount = _min(_requestedAmount, availableAllocations);
 
-        if (amount < _amount)
+        if (availableAllocations == 0)
+            return;
+
+        if (realAmount < _requestedAmount || availableAllocations == realAmount)
             _setAllocationState(_tokenId, AllocationState.PENDING);
 
-        if (amount == 0) {
-            return;
-        }
+        allocationInfos[_tokenId].totalAllocated += realAmount;
 
-        allocationInfos[_tokenId].totalAllocated += amount;
-
-        allocationRewardToken.mint(_user, _tokenId, amount);
+        _isReward
+            ? allocationRewardToken.mint(_user, _tokenId, realAmount)
+            : allocationToken.mint(_user, _tokenId, realAmount);
     }
 
     /**
@@ -298,16 +302,16 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         emit TokenStateChanged(_tokenId, _state);
     }
 
-    function _getAvailableAllocationAmount(
-        uint _tokenId,
-        uint _requestedAmount
-    ) private view returns (uint) {
+    function _getAvailableAllocationAmount(uint _tokenId) private view returns (uint) {
         uint maxSupply = tokenDatabase.maxSupply(_tokenId);
-        uint available = maxSupply - allocationInfos[_tokenId].totalAllocated;
 
-        return available <= _requestedAmount
-            ? available
-            : _requestedAmount;
+        return maxSupply - allocationInfos[_tokenId].totalAllocated;
+    }
+
+    function _min(uint _amountA, uint _amountB) private pure returns (uint) {
+        return _amountA > _amountB
+            ? _amountB
+            : _amountA;
     }
 
     /**
