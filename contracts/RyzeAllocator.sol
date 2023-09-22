@@ -79,6 +79,10 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         referralRewardBasisPoints = _referralRewardBasisPoints;
     }
 
+    /**
+     * @dev Internal function to initialize allocation for a given token ID.
+     * @param _tokenId The ID of the token for which allocation is to be initialized.
+     */
     function _initializeAllocation(uint _tokenId) internal {
         _mintAllocation(
             _tokenId,
@@ -171,6 +175,13 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         );
     }
 
+    /**
+     * @dev Internal function to handle allocation logic.
+     * @param _tokenId The ID of the token to be allocated.
+     * @param _requestedAmount The amount of tokens requested to be allocated.
+     * @param _referrer The address of the referrer.
+     * @param _collectPayment Indicates if the payment should be collected.
+     */
     function _allocate(
         uint _tokenId,
         uint _requestedAmount,
@@ -209,6 +220,13 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         }
     }
 
+    /**
+     * @dev Internal function to mint the given allocation amount for a specific token to a user or referrer.
+     * @param _tokenId The ID of the token for which the allocation is minted.
+     * @param _requestedAmount The amount of tokens to mint.
+     * @param _user The address of the user to receive the minted allocation.
+     * @param _isReward Indicates if the minted allocation is a reward.
+     */
     function _mintAllocation(
         uint _tokenId,
         uint _requestedAmount,
@@ -296,18 +314,34 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         _setAllocationState(_tokenId, AllocationState.DISABLED);
     }
 
+    /**
+     * @dev Internal function to set the allocation state of a specific token.
+     * @param _tokenId The ID of the token for which the allocation state is to be set.
+     * @param _state The new allocation state to set.
+     */
     function _setAllocationState(uint _tokenId, AllocationState _state) private {
         allocationInfos[_tokenId].allocationState = _state;
 
         emit TokenStateChanged(_tokenId, _state);
     }
 
+    /**
+     * @dev Internal function to get the available allocation amount for a specific token.
+     * @param _tokenId The ID of the token to query.
+     * @return Returns the available allocation amount for the token.
+     */
     function _getAvailableAllocationAmount(uint _tokenId) private view returns (uint) {
         uint maxSupply = tokenDatabase.maxSupply(_tokenId);
 
         return maxSupply - allocationInfos[_tokenId].totalAllocated;
     }
 
+    /**
+     * @dev Internal utility function to get the minimum of two amounts.
+     * @param _amountA The first amount.
+     * @param _amountB The second amount.
+     * @return Returns the smaller of the two amounts.
+     */
     function _min(uint _amountA, uint _amountB) private pure returns (uint) {
         return _amountA > _amountB
             ? _amountB

@@ -47,6 +47,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
     error TokenNotEnabled();
     error InsufficientBalance();
 
+    // @dev Initialization function to set up initial contract state.
     function initialize(
         address _owner,
         address _tokenDatabase,
@@ -163,6 +164,15 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         _mintLiquidToken(_tokenId, _amount);
     }
 
+    /**
+     * @notice Converts a user's allocation rewards into liquid ERC20 real estate tokens.
+     *
+     * @dev This function first checks the reward balance of the caller based on the provided token ID.
+     * If there's a balance, it updates the total vested amount.
+     * The function then calculates the claimable amount based on the vesting progression and mints equivalent liquid ERC20 tokens to the caller.
+     *
+     * @param _tokenId The ID of the NFT token.
+     */
     function convertAllocationRewardToRealEstateErc20(uint _tokenId) external {
         uint collectedAmount = allocationRewardToken.balanceOf(msg.sender, _tokenId) > 0
             ? _collectAllocationToken(_tokenId, true)
@@ -179,6 +189,15 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         _mintLiquidToken(_tokenId, claimAmount);
     }
 
+    /**
+     * @notice Calculate the amount of tokens that have vested for a user based on a particular token ID.
+     *
+     * @dev This function takes into account the total vesting duration and the time since the user's first claim.
+     *
+     * @param _user Address of the user whose vested amount needs to be checked.
+     * @param _tokenId The ID of the NFT token.
+     * @return The number of tokens that have vested for the user.
+     */
     function vestedAmount(address _user, uint _tokenId) public view returns (uint)  {
         uint firstClaimTimestamp = _firstClaimTimestamps[_tokenId];
         uint vestingEnd = firstClaimTimestamp + VESTING_PERIOD;
@@ -240,12 +259,27 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         return amount;
     }
 
+    /**
+     * @notice Initializes the first claim timestamp for a given token ID.
+     *
+     * @dev Used to track vesting start time for each token.
+     *
+     * @param _tokenId The ID of the NFT token.
+     */
     function _initializeFirstClaimTimestamp(uint _tokenId) internal {
         if (_firstClaimTimestamps[_tokenId] == 0)
             _firstClaimTimestamps[_tokenId] = block.timestamp;
     }
 
-    // @dev TODO comment this is times 1e6
+    /**
+     * @notice Calculates the percentage of elapsed time since the start of a vesting period.
+     *
+     * @dev The result is multiplied by 1e6 for precision.
+     *
+     * @param startTime The starting timestamp of the vesting period.
+     * @param finishTime The ending timestamp of the vesting period.
+     * @return The percentage of elapsed time (multiplied by 1e6).
+     */
     function _calculateElapsedTimePercentage(
         uint256 startTime,
         uint256 finishTime
