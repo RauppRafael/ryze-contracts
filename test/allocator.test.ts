@@ -29,7 +29,7 @@ chai.use(solidity)
 const INITIAL_DAI_BALANCE = 100_000_000
 const MAX_SUPPLY = 1_000_000
 const INITIAL_LIQUIDITY_PERCENTAGE = 1
-const REFERRAL_REWARD_PERCENTAGE = 0.1
+const REFERRAL_REWARD_PERCENTAGE = 1
 
 const initialLiquidityAllocation = MAX_SUPPLY * INITIAL_LIQUIDITY_PERCENTAGE / 100
 
@@ -133,6 +133,21 @@ describe('Allocator', () => {
         const wantAmount = MAX_SUPPLY / 10
 
         beforeEach(create)
+
+        it('Allocates the exact max supply', async () => {
+            await allocator.allocate(0, 1, hre.ethers.constants.AddressZero)
+
+            await allocator.allocate(
+                0,
+                MAX_SUPPLY - Number((await allocator.allocationInfos(0)).totalAllocated),
+                hre.ethers.constants.AddressZero,
+            )
+
+            const allocationInfo = await allocator.allocationInfos(0)
+
+            expect(allocationInfo.totalAllocated).to.equal(MAX_SUPPLY)
+            expect(allocationInfo.allocationState).to.equal(AllocationState.PENDING)
+        })
 
         it('Mints allocation tokens', async () => {
             for (let index = 0; index < 10; index++)
@@ -291,7 +306,7 @@ describe('Allocator', () => {
 
         await allocate(0, MAX_SUPPLY / 2)
 
-        await expect(tokenConverter.convertAllocationToRealEstateErc1155(0, false))
+        await expect(tokenConverter.convertAllocationToRealEstateErc1155(0))
             .to.be.revertedWith(TokenConverterErrors.TokenNotEnabled)
     })
 
@@ -309,12 +324,12 @@ describe('Allocator', () => {
         })
 
         it('Claims Real Estate Token', async () => {
-            await tokenConverter.convertAllocationToRealEstateErc1155(0, false)
+            await tokenConverter.convertAllocationToRealEstateErc1155(0)
 
             expect(await realEstateToken.balanceOf(deployer.address, 0))
                 .to.equal(expectedBalance)
 
-            await expect(tokenConverter.convertAllocationToRealEstateErc1155(0, false))
+            await expect(tokenConverter.convertAllocationToRealEstateErc1155(0))
                 .to.be.revertedWith(TokenConverterErrors.InsufficientBalance)
 
             expect(await realEstateToken.balanceOf(deployer.address, 0))
@@ -327,12 +342,12 @@ describe('Allocator', () => {
                 hre.ethers.provider,
             )
 
-            await tokenConverter.convertAllocationToRealEstateErc20(0, false)
+            await tokenConverter.convertAllocationToRealEstateErc20(0)
 
             expect(await liquidToken.balanceOf(deployer.address))
                 .to.equal(Hardhat.parseEther(expectedBalance))
 
-            await expect(tokenConverter.convertAllocationToRealEstateErc20(0, false))
+            await expect(tokenConverter.convertAllocationToRealEstateErc20(0))
                 .to.be.revertedWith(TokenConverterErrors.InsufficientBalance)
 
             expect(await liquidToken.balanceOf(deployer.address))
@@ -431,11 +446,11 @@ describe('Allocator', () => {
 
             await liquidityInitializer.claimAndAddLiquidity(0, 10000)
 
-            await tokenConverter.connect(referrer).convertAllocationToRealEstateErc1155(0, true)
+            await tokenConverter.connect(referrer).convertAllocationRewardToRealEstateErc20(0)
 
             expect(await allocationRewardToken.balanceOf(referrer.address, 0)).equal(0)
 
-            expect(await realEstateToken.balanceOf(referrer.address, 0))
+            expect((await tokenConverter.vestingBalances(referrer.address, 0)).totalAmount)
                 .to.equal(expectedReferralAllocation)
         })
     })
@@ -471,16 +486,16 @@ describe('Allocator', () => {
                 .to.equal(initialBalanceDai.add(Hardhat.parseEther(amount).mul(value * 100).div(100)))
         }
 
-        it('Burns allocations 1:1.1',  async () => {
+        it('Burns allocations 1:1.1', async () => {
             await expect(burnAllocation(1.1)).to.be.revertedWith('Dai/insufficient-balance')
         })
-        it('Burns allocations 1:1.1', async  () => {
+        it('Burns allocations 1:1.1', async () => {
             await dai.mint(allocator.address, Hardhat.parseEther(100_000))
             await burnAllocation(1.01)
         })
-        it('Burns allocations 1:1',  () => burnAllocation(1))
-        it('Burns allocations 1:1',  () => burnAllocation(0.95))
-        it('Burns allocations 1:0.9',  () => burnAllocation(0.9))
+        it('Burns allocations 1:1', () => burnAllocation(1))
+        it('Burns allocations 1:1', () => burnAllocation(0.95))
+        it('Burns allocations 1:0.9', () => burnAllocation(0.9))
 
         it('Cannot burn rewarded allocation', async () => {
             await allocator.disableToken(tokenId, Hardhat.parseEther(.9))

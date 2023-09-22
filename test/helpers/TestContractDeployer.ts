@@ -42,8 +42,8 @@ export class TestContractDeployer {
         const contracts = await deployProject({
             gnosis: deployer.address,
             whitelistManager: deployer.address,
-            initialLiquidityBasisPoints: 100,
-            referralRewardBasisPoints: 10,
+            initialLiquidityBasisPoints: 100, // 1%
+            referralRewardBasisPoints: 100, // 1%
         })
         const {
             dai,
@@ -53,8 +53,6 @@ export class TestContractDeployer {
             realEstateToken,
             allocator,
             liquidityInitializer,
-            allocationToken,
-            allocationRewardToken,
             factory,
             tokenDatabase,
         } = contracts
