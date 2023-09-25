@@ -86,7 +86,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _tokenId The ID of the token to claim.
      */
     function convertAllocationToRealEstateErc1155(uint _tokenId) public {
-        _initializeFirstClaimTimestamp(_tokenId);
+        _initializeFirstConversionTimestamp(_tokenId);
 
         uint amount = _collectAllocationToken(_tokenId, false);
 
@@ -114,7 +114,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _tokenId The ID of the token to claim
      */
     function convertAllocationToRealEstateErc20(uint _tokenId) public {
-        _initializeFirstClaimTimestamp(_tokenId);
+        _initializeFirstConversionTimestamp(_tokenId);
 
         uint amount = _collectAllocationToken(_tokenId, false);
 
@@ -199,9 +199,9 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @return The number of tokens that have vested for the user.
      */
     function vestedAmount(address _user, uint _tokenId) public view returns (uint)  {
-        uint firstClaimTimestamp = _firstConversionTimestamps[_tokenId];
-        uint vestingEnd = firstClaimTimestamp + VESTING_PERIOD;
-        uint vestingPercentage = _calculateElapsedTimePercentage(firstClaimTimestamp, vestingEnd);
+        uint firstConversionTimestamp = _firstConversionTimestamps[_tokenId];
+        uint vestingEnd = firstConversionTimestamp + VESTING_PERIOD;
+        uint vestingPercentage = _calculateElapsedTimePercentage(firstConversionTimestamp, vestingEnd);
         Vesting memory vesting = vestingBalances[_user][_tokenId];
 
         return vesting.totalAmount * vestingPercentage / 1e6;
@@ -266,7 +266,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      *
      * @param _tokenId The ID of the NFT token.
      */
-    function _initializeFirstClaimTimestamp(uint _tokenId) internal {
+    function _initializeFirstConversionTimestamp(uint _tokenId) internal {
         if (_firstConversionTimestamps[_tokenId] == 0)
             _firstConversionTimestamps[_tokenId] = block.timestamp;
     }
