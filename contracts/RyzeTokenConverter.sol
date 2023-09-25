@@ -208,9 +208,8 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
     }
 
     function _mintLiquidToken(uint _tokenId, uint _amount) internal {
-        if (_liquidTokenAddresses[_tokenId] == address(0)) {
+        if (_liquidTokenAddresses[_tokenId] == address(0))
             _createLiquidToken(_tokenId);
-        }
 
         RyzeLiquidToken(_liquidTokenAddresses[_tokenId]).mint(msg.sender, _amount * 1e18);
     }
