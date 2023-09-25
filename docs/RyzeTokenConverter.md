@@ -291,10 +291,10 @@ _This function is used internally when a user converts their allocation tokens._
 | ---- | ---- | ----------- |
 | [0] | uint256 | The amount of tokens collected from the user. |
 
-### _initializeFirstClaimTimestamp
+### _initializeFirstConversionTimestamp
 
 ```solidity
-function _initializeFirstClaimTimestamp(uint256 _tokenId) internal
+function _initializeFirstConversionTimestamp(uint256 _tokenId) internal
 ```
 
 Initializes the first claim timestamp for a given token ID.
