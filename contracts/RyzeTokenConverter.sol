@@ -31,7 +31,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
     mapping(uint => address) private _liquidTokenAddresses;
 
     // @dev Maps NFT IDs to the timestamp of the first claim.
-    mapping(uint => uint) private _firstClaimTimestamps;
+    mapping(uint => uint) private _firstConversionTimestamps;
 
     // @dev Maps user addresses to the reward vesting info of a NFT.
     mapping(address => mapping(uint => Vesting)) public vestingBalances;
@@ -199,7 +199,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @return The number of tokens that have vested for the user.
      */
     function vestedAmount(address _user, uint _tokenId) public view returns (uint)  {
-        uint firstClaimTimestamp = _firstClaimTimestamps[_tokenId];
+        uint firstClaimTimestamp = _firstConversionTimestamps[_tokenId];
         uint vestingEnd = firstClaimTimestamp + VESTING_PERIOD;
         uint vestingPercentage = _calculateElapsedTimePercentage(firstClaimTimestamp, vestingEnd);
         Vesting memory vesting = vestingBalances[_user][_tokenId];
@@ -267,8 +267,8 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _tokenId The ID of the NFT token.
      */
     function _initializeFirstClaimTimestamp(uint _tokenId) internal {
-        if (_firstClaimTimestamps[_tokenId] == 0)
-            _firstClaimTimestamps[_tokenId] = block.timestamp;
+        if (_firstConversionTimestamps[_tokenId] == 0)
+            _firstConversionTimestamps[_tokenId] = block.timestamp;
     }
 
     /**
