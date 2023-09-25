@@ -284,6 +284,9 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         uint256 startTime,
         uint256 finishTime
     ) public view returns (uint256) {
+        if (startTime == 0 || finishTime == 0)
+            return 0;
+
         uint256 totalTime = finishTime - startTime;
         uint256 elapsedTime = block.timestamp - startTime;
 
