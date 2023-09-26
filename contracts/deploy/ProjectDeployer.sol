@@ -179,7 +179,7 @@ contract ProjectDeployer is Ownable {
             router,
             allocator.proxy,
             tokenConverter.proxy,
-            allocationRewardToken,
+            allocationToken,
             _stablecoin
         );
     }

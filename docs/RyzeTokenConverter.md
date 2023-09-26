@@ -6,6 +6,27 @@ Manages the conversion of tokens between different standards and representations
 
 _Enables converting between ERC1155 (NFT) representations and their liquid ERC20 counterparts._
 
+### Vesting
+
+```solidity
+struct Vesting {
+  uint256 totalAmount;
+  uint256 claimedAmount;
+}
+```
+
+### VESTING_PERIOD
+
+```solidity
+uint256 VESTING_PERIOD
+```
+
+### vestingBalances
+
+```solidity
+mapping(address => mapping(uint256 => struct RyzeTokenConverter.Vesting)) vestingBalances
+```
+
 ### tokenDatabase
 
 ```solidity
@@ -83,7 +104,7 @@ Retrieves the address of the liquid ERC20 token associated with a given NFT ID.
 ### convertAllocationToRealEstateErc1155
 
 ```solidity
-function convertAllocationToRealEstateErc1155(uint256 _tokenId, bool _useReward) public
+function convertAllocationToRealEstateErc1155(uint256 _tokenId) public
 ```
 
 Converts their allocation tokens into ERC1155 real estate tokens.
@@ -95,12 +116,11 @@ _This function allows the caller to claim their share of real estate tokens._
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the token to claim. |
-| _useReward | bool | Whether to use the reward token or the main allocation token. |
 
 ### convertManyAllocationsToRealEstate1155
 
 ```solidity
-function convertManyAllocationsToRealEstate1155(uint256[] _tokenIds, bool _useReward) external
+function convertManyAllocationsToRealEstate1155(uint256[] _tokenIds) external
 ```
 
 Converts multiple allocation tokens into ERC1155 real estate tokens in a batch.
@@ -112,12 +132,11 @@ _This function allows the caller to claim their share of multiple real estate to
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenIds | uint256[] | An array of token IDs to claim. |
-| _useReward | bool | Whether to use the reward token or the main allocation token. |
 
 ### convertAllocationToRealEstateErc20
 
 ```solidity
-function convertAllocationToRealEstateErc20(uint256 _tokenId, bool _useReward) public
+function convertAllocationToRealEstateErc20(uint256 _tokenId) public
 ```
 
 Convert allocation tokens into liquid ERC20 real estate tokens.
@@ -129,12 +148,11 @@ _This function allows the caller to claim their share of real estate tokens and 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the token to claim |
-| _useReward | bool | A flag to determine whether to use the reward token or the allocation token for claiming |
 
 ### convertManyAllocationsToRealEstateErc20
 
 ```solidity
-function convertManyAllocationsToRealEstateErc20(uint256[] _tokenIds, bool _useReward) external
+function convertManyAllocationsToRealEstateErc20(uint256[] _tokenIds) external
 ```
 
 Converts multiple allocation tokens into liquid ERC20 real estate tokens in a batch.
@@ -146,7 +164,6 @@ _Claims multiple real estate tokens and converts the claimed tokens to their erc
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenIds | uint256[] | Array of token IDs to be claimed. |
-| _useReward | bool | Boolean value indicating whether to claim rewards instead of main token allocations. |
 
 ### convertRealEstateFromErc20ToErc1155
 
@@ -183,6 +200,47 @@ _The sender's NFTs will be burned and they will receive the equivalent amount of
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the NFT to convert from. |
 | _amount | uint256 | The amount of NFTs to convert. |
+
+### convertAllocationRewardToRealEstateErc20
+
+```solidity
+function convertAllocationRewardToRealEstateErc20(uint256 _tokenId) external
+```
+
+Converts a user's allocation rewards into liquid ERC20 real estate tokens.
+
+_This function first checks the reward balance of the caller based on the provided token ID.
+If there's a balance, it updates the total vested amount.
+The function then calculates the claimable amount based on the vesting progression and mints equivalent liquid ERC20 tokens to the caller._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenId | uint256 | The ID of the NFT token. |
+
+### vestedAmount
+
+```solidity
+function vestedAmount(address _user, uint256 _tokenId) public view returns (uint256)
+```
+
+Calculate the amount of tokens that have vested for a user based on a particular token ID.
+
+_This function takes into account the total vesting duration and the time since the user's first claim._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _user | address | Address of the user whose vested amount needs to be checked. |
+| _tokenId | uint256 | The ID of the NFT token. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | The number of tokens that have vested for the user. |
 
 ### _mintLiquidToken
 
@@ -232,4 +290,43 @@ _This function is used internally when a user converts their allocation tokens._
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | [0] | uint256 | The amount of tokens collected from the user. |
+
+### _initializeFirstConversionTimestamp
+
+```solidity
+function _initializeFirstConversionTimestamp(uint256 _tokenId) internal
+```
+
+Initializes the first claim timestamp for a given token ID.
+
+_Used to track vesting start time for each token._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenId | uint256 | The ID of the NFT token. |
+
+### _calculateElapsedTimePercentage
+
+```solidity
+function _calculateElapsedTimePercentage(uint256 startTime, uint256 finishTime) public view returns (uint256)
+```
+
+Calculates the percentage of elapsed time since the start of a vesting period.
+
+_The result is multiplied by 1e6 for precision._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| startTime | uint256 | The starting timestamp of the vesting period. |
+| finishTime | uint256 | The ending timestamp of the vesting period. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | The percentage of elapsed time (multiplied by 1e6). |
 

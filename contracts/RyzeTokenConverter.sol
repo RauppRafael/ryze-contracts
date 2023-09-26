@@ -19,7 +19,22 @@ import "./RyzeTokenDatabase.sol";
 contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    struct Vesting {
+        uint totalAmount;
+        uint claimedAmount;
+    }
+
+    // @dev 6 months in seconds.
+    uint public constant VESTING_PERIOD = 30 days * 6;
+
+    // @dev Maps NFT IDs to their corresponding liquid token addresses.
     mapping(uint => address) private _liquidTokenAddresses;
+
+    // @dev Maps NFT IDs to the timestamp of the first claim.
+    mapping(uint => uint) private _firstConversionTimestamps;
+
+    // @dev Maps user addresses to the reward vesting info of a NFT.
+    mapping(address => mapping(uint => Vesting)) public vestingBalances;
 
     RyzeTokenDatabase public tokenDatabase;
     RyzeAllocator public allocator;
@@ -32,6 +47,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
     error TokenNotEnabled();
     error InsufficientBalance();
 
+    // @dev Initialization function to set up initial contract state.
     function initialize(
         address _owner,
         address _tokenDatabase,
@@ -68,10 +84,11 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @dev This function allows the caller to claim their share of real estate tokens.
      *
      * @param _tokenId The ID of the token to claim.
-     * @param _useReward Whether to use the reward token or the main allocation token.
      */
-    function convertAllocationToRealEstateErc1155(uint _tokenId, bool _useReward) public {
-        uint amount = _collectAllocationToken(_tokenId, _useReward);
+    function convertAllocationToRealEstateErc1155(uint _tokenId) public {
+        _initializeFirstConversionTimestamp(_tokenId);
+
+        uint amount = _collectAllocationToken(_tokenId, false);
 
         realEstateToken.mint(msg.sender, _tokenId, amount);
     }
@@ -82,11 +99,10 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @dev This function allows the caller to claim their share of multiple real estate tokens.
      *
      * @param _tokenIds An array of token IDs to claim.
-     * @param _useReward Whether to use the reward token or the main allocation token.
      */
-    function convertManyAllocationsToRealEstate1155(uint[] calldata _tokenIds, bool _useReward) external {
+    function convertManyAllocationsToRealEstate1155(uint[] calldata _tokenIds) external {
         for (uint index; index < _tokenIds.length; index++) {
-            convertAllocationToRealEstateErc1155(_tokenIds[index], _useReward);
+            convertAllocationToRealEstateErc1155(_tokenIds[index]);
         }
     }
 
@@ -96,10 +112,11 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @dev This function allows the caller to claim their share of real estate tokens and convert it to a liquid token.
      *
      * @param _tokenId The ID of the token to claim
-     * @param _useReward A flag to determine whether to use the reward token or the allocation token for claiming
      */
-    function convertAllocationToRealEstateErc20(uint _tokenId, bool _useReward) public {
-        uint amount = _collectAllocationToken(_tokenId, _useReward);
+    function convertAllocationToRealEstateErc20(uint _tokenId) public {
+        _initializeFirstConversionTimestamp(_tokenId);
+
+        uint amount = _collectAllocationToken(_tokenId, false);
 
         _mintLiquidToken(_tokenId, amount);
     }
@@ -110,11 +127,10 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @dev Claims multiple real estate tokens and converts the claimed tokens to their erc20 equivalent.
      *
      * @param _tokenIds Array of token IDs to be claimed.
-     * @param _useReward Boolean value indicating whether to claim rewards instead of main token allocations.
      */
-    function convertManyAllocationsToRealEstateErc20(uint[] calldata _tokenIds, bool _useReward) external {
+    function convertManyAllocationsToRealEstateErc20(uint[] calldata _tokenIds) external {
         for (uint index; index < _tokenIds.length; index++) {
-            convertAllocationToRealEstateErc20(_tokenIds[index], _useReward);
+            convertAllocationToRealEstateErc20(_tokenIds[index]);
         }
     }
 
@@ -148,10 +164,52 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         _mintLiquidToken(_tokenId, _amount);
     }
 
+    /**
+     * @notice Converts a user's allocation rewards into liquid ERC20 real estate tokens.
+     *
+     * @dev This function first checks the reward balance of the caller based on the provided token ID.
+     * If there's a balance, it updates the total vested amount.
+     * The function then calculates the claimable amount based on the vesting progression and mints equivalent liquid ERC20 tokens to the caller.
+     *
+     * @param _tokenId The ID of the NFT token.
+     */
+    function convertAllocationRewardToRealEstateErc20(uint _tokenId) external {
+        uint collectedAmount = allocationRewardToken.balanceOf(msg.sender, _tokenId) > 0
+            ? _collectAllocationToken(_tokenId, true)
+            : 0;
+        Vesting storage vesting = vestingBalances[msg.sender][_tokenId];
+
+        if (collectedAmount > 0)
+            vesting.totalAmount += collectedAmount;
+
+        uint claimAmount = vestedAmount(msg.sender, _tokenId) - vesting.claimedAmount;
+
+        vesting.claimedAmount += claimAmount;
+
+        _mintLiquidToken(_tokenId, claimAmount);
+    }
+
+    /**
+     * @notice Calculate the amount of tokens that have vested for a user based on a particular token ID.
+     *
+     * @dev This function takes into account the total vesting duration and the time since the user's first claim.
+     *
+     * @param _user Address of the user whose vested amount needs to be checked.
+     * @param _tokenId The ID of the NFT token.
+     * @return The number of tokens that have vested for the user.
+     */
+    function vestedAmount(address _user, uint _tokenId) public view returns (uint)  {
+        uint firstConversionTimestamp = _firstConversionTimestamps[_tokenId];
+        uint vestingEnd = firstConversionTimestamp + VESTING_PERIOD;
+        uint vestingPercentage = _calculateElapsedTimePercentage(firstConversionTimestamp, vestingEnd);
+        Vesting memory vesting = vestingBalances[_user][_tokenId];
+
+        return vesting.totalAmount * vestingPercentage / 1e6;
+    }
+
     function _mintLiquidToken(uint _tokenId, uint _amount) internal {
-        if (_liquidTokenAddresses[_tokenId] == address(0)) {
+        if (_liquidTokenAddresses[_tokenId] == address(0))
             _createLiquidToken(_tokenId);
-        }
 
         RyzeLiquidToken(_liquidTokenAddresses[_tokenId]).mint(msg.sender, _amount * 1e18);
     }
@@ -198,5 +256,42 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         _allocationToken.safeTransferFrom(msg.sender, address(this), _tokenId, amount, "");
 
         return amount;
+    }
+
+    /**
+     * @notice Initializes the first claim timestamp for a given token ID.
+     *
+     * @dev Used to track vesting start time for each token.
+     *
+     * @param _tokenId The ID of the NFT token.
+     */
+    function _initializeFirstConversionTimestamp(uint _tokenId) internal {
+        if (_firstConversionTimestamps[_tokenId] == 0)
+            _firstConversionTimestamps[_tokenId] = block.timestamp;
+    }
+
+    /**
+     * @notice Calculates the percentage of elapsed time since the start of a vesting period.
+     *
+     * @dev The result is multiplied by 1e6 for precision.
+     *
+     * @param startTime The starting timestamp of the vesting period.
+     * @param finishTime The ending timestamp of the vesting period.
+     * @return The percentage of elapsed time (multiplied by 1e6).
+     */
+    function _calculateElapsedTimePercentage(
+        uint256 startTime,
+        uint256 finishTime
+    ) public view returns (uint256) {
+        if (startTime == 0 || finishTime == 0)
+            return 0;
+
+        uint256 totalTime = finishTime - startTime;
+        uint256 elapsedTime = block.timestamp - startTime;
+
+        // Cap the elapsed time to avoid going over 100%
+        return elapsedTime > totalTime
+            ? 1e6
+            : elapsedTime * 1e6 / totalTime;
     }
 }

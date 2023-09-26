@@ -70,7 +70,7 @@ describe('Dex', () => {
         await allocatorHelper.allocate(0, MAX_SUPPLY)
 
         await liquidityInitializer.claimAndAddLiquidity(tokenId, 10000)
-        await tokenConverter.convertAllocationToRealEstateErc1155(0, false)
+        await tokenConverter.convertAllocationToRealEstateErc1155(0)
         await tokenConverter.convertRealEstateFromErc1155ToErc20(tokenId, 2_000_000)
 
         liquidToken = await getLiquidToken(tokenConverter, 0, deployer)

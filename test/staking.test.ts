@@ -121,10 +121,10 @@ describe('Staking', () => {
         await allocatorHelper.allocate(0, MAX_SUPPLY)
 
         await liquidityInitializer.claimAndAddLiquidity(tokenId, 10_000)
-        await tokenConverter.convertAllocationToRealEstateErc20(0, false)
+        await tokenConverter.convertAllocationToRealEstateErc20(0)
 
         liquidToken = await getLiquidToken(tokenConverter, 0, deployer)
-        pair = await RyzePair__factory.connect(
+        pair = RyzePair__factory.connect(
             await router.pairFor(liquidToken.address, dai.address),
             deployer,
         )

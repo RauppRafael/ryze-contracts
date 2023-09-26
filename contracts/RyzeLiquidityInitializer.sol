@@ -22,7 +22,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
     RyzeTokenConverter public tokenConverter;
     RyzeRouter public router;
 
-    IERC1155Upgradeable public allocationRewardToken;
+    IERC1155Upgradeable public allocationToken;
     IERC20Upgradeable public stablecoin;
 
     function initialize(
@@ -30,7 +30,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
         address _router,
         address _allocator,
         address _tokenConverter,
-        address _allocationRewardToken,
+        address _allocationToken,
         address _stablecoin
     ) public initializer {
         __Ownable_init();
@@ -40,7 +40,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
         tokenConverter = RyzeTokenConverter(_tokenConverter);
         router = RyzeRouter(payable(_router));
 
-        allocationRewardToken = IERC1155Upgradeable(_allocationRewardToken);
+        allocationToken = IERC1155Upgradeable(_allocationToken);
         stablecoin = IERC20Upgradeable(_stablecoin);
     }
 
@@ -50,7 +50,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
      * @return uint The balance of the specified allocation ID.
      */
     function allocation(uint _tokenId) public view returns (uint) {
-        return allocationRewardToken.balanceOf(address(this), _tokenId);
+        return allocationToken.balanceOf(address(this), _tokenId);
     }
 
     /**
@@ -67,7 +67,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
     }
 
     /**
-     * @notice Claims the allocation reward, converts it into real estate ERC20, and adds it as liquidity.
+     * @notice Claims the allocation token, converts it into real estate ERC20, and adds it as liquidity.
      * @param _tokenId The ID of the token/allocation to claim and add as liquidity.
      * @param _stablecoinToRealEstateRatioBasisPoints Ratio of stablecoins to real estate tokens in basis points for liquidity addition.
      */
@@ -76,7 +76,7 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
         uint _stablecoinToRealEstateRatioBasisPoints
     ) external onlyOwner {
         allocator.enableToken(_tokenId);
-        tokenConverter.convertAllocationToRealEstateErc20(_tokenId, true);
+        tokenConverter.convertAllocationToRealEstateErc20(_tokenId);
 
         address liquidTokenAddress = tokenConverter.getLiquidToken(_tokenId);
         uint liquidTokenBalance = IERC20Upgradeable(liquidTokenAddress).balanceOf(address(this));
