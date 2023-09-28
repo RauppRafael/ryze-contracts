@@ -1,7 +1,7 @@
 import { Hardhat } from 'hardhat-vanity'
 import { Permit } from '@ryze-blockchain/shared'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import { BigNumber, Contract } from 'ethers'
+import { BigNumber, Contract, utils } from 'ethers'
 import { Dai, RyzeFactory, RyzePair__factory, RyzeRouter } from '../../types'
 import { getChainId, getDeadline } from '../../helpers/hardhat'
 
@@ -15,7 +15,8 @@ export class DexHelpers {
         public readonly factory: RyzeFactory,
         public readonly router: RyzeRouter,
         public readonly stablecoin: Dai,
-    ) {}
+    ) {
+    }
 
     async getPair(token: Contract) {
         return RyzePair__factory.connect(
@@ -31,8 +32,10 @@ export class DexHelpers {
         amountB: number,
         slippage: number,
     ) {
-        const ethAmountA = Hardhat.parseEther(amountA)
-        const ethAmountB = Hardhat.parseEther(amountB)
+        const decimalsA: number = await tokenA.decimals()
+        const decimalsB: number = await tokenB.decimals()
+        const ethAmountA = utils.parseUnits(amountA.toString(), decimalsA)
+        const ethAmountB = utils.parseUnits(amountB.toString(), decimalsB)
         const signer = await Hardhat.mainSigner()
 
         await approveIfNeeded(tokenA, signer, this.router, ethAmountA)
@@ -43,8 +46,8 @@ export class DexHelpers {
             tokenB.address,
             ethAmountA,
             ethAmountB,
-            Hardhat.parseEther(amountA - amountA * slippage),
-            Hardhat.parseEther(amountB - amountB * slippage),
+            utils.parseUnits((amountA - amountA * slippage).toString(), decimalsA),
+            utils.parseUnits((amountB - amountB * slippage).toString(), decimalsB),
             signer.address,
             await getDeadline(),
         )
