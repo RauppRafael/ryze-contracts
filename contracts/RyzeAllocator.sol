@@ -12,6 +12,10 @@ import "./libraries/Permit.sol";
 import "./RyzeTokenDatabase.sol";
 import "./RyzeToken.sol";
 
+interface IERC20Decimals {
+    function decimals() external view returns (uint8);
+}
+
 /**
  * @title RyzeAllocator
  * @notice Manages allocations for real estate tokens in exchange for stablecoins or ETH.
@@ -42,6 +46,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
 
     uint16 public initialLiquidityBasisPoints; // 100 = 1%
     uint16 public referralRewardBasisPoints; // 100 = 1%
+    uint8 private stablecoinDecimals;
 
     mapping(uint => AllocationInfo) public allocationInfos;
     mapping(uint => uint) public disabledTokenValue;
@@ -77,6 +82,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         stablecoin = IERC20Upgradeable(_stablecoin);
         initialLiquidityBasisPoints = _initialLiquidityBasisPoints;
         referralRewardBasisPoints = _referralRewardBasisPoints;
+        stablecoinDecimals = IERC20Decimals(_stablecoin).decimals();
     }
 
     /**
@@ -149,7 +155,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
      * @notice Allocates using Ether by converting it to stablecoins first. Requires user to be whitelisted.
      * @dev This function first converts the received Ether to stablecoins using the router, then allocates the converted amount.
      * @param _tokenId The ID of the token to be allocated.
-     * @param _minAmount The minimum amount of tokens expected to receive in the conversion.
+     * @param _minAmount The minimum amount of allocation tokens expected to receive in the conversion.
      * @param _referrer The address of the referrer.
      */
     function allocateWithEth(
@@ -163,7 +169,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         path[0] = router.WETH();
         path[1] = address(stablecoin);
 
-        uint realAmount = _min(_minAmount, _getAvailableAllocationAmount(_tokenId)) * 1e18;
+        uint realAmount = _min(_minAmount, _getAvailableAllocationAmount(_tokenId)) * (10 ** stablecoinDecimals);
 
         if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
@@ -188,7 +194,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
 
         _allocate(
             _tokenId,
-            (stablecoin.balanceOf(address(this)) - initialBalance) / 1e18,
+            (stablecoin.balanceOf(address(this)) - initialBalance) / (10 ** stablecoinDecimals),
             _referrer,
             false
         );
@@ -225,7 +231,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
             revert InvalidAmount();
 
         if (_collectPayment)
-            stablecoin.safeTransferFrom(msg.sender, address(this), realAmount * 1e18);
+            stablecoin.safeTransferFrom(msg.sender, address(this), realAmount * (10 ** stablecoinDecimals));
 
         _mintAllocation(_tokenId, realAmount, msg.sender, false);
 
