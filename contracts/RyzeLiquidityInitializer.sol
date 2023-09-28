@@ -56,31 +56,32 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
     /**
      * @notice Computes the amount of stablecoins needed to initialize liquidity for a specific token, based on a given ratio.
      * @param _tokenId The ID of the allocation.
-     * @param _stablecoinToRealEstateRatioBasisPoints Ratio of stablecoins to real estate tokens in basis points.
+     * @param _stablecoinToRealEstateRatio Ratio of stablecoins to real estate tokens.
      * @return uint The calculated amount of stablecoins required.
      */
     function calculateStablecoinsRequired(
         uint _tokenId,
-        uint _stablecoinToRealEstateRatioBasisPoints
+        uint _stablecoinToRealEstateRatio
     ) external view returns (uint) {
-        return allocation(_tokenId) * 1e18 * _stablecoinToRealEstateRatioBasisPoints / 10000;
+        return allocation(_tokenId) * _stablecoinToRealEstateRatio;
     }
 
     /**
      * @notice Claims the allocation token, converts it into real estate ERC20, and adds it as liquidity.
      * @param _tokenId The ID of the token/allocation to claim and add as liquidity.
-     * @param _stablecoinToRealEstateRatioBasisPoints Ratio of stablecoins to real estate tokens in basis points for liquidity addition.
+     * @param _stablecoinToRealEstateRatio Ratio of stablecoins to real estate tokens for liquidity addition.
      */
     function claimAndAddLiquidity(
         uint _tokenId,
-        uint _stablecoinToRealEstateRatioBasisPoints
+        uint _stablecoinToRealEstateRatio
     ) external onlyOwner {
+        uint stablecoinBalance = allocation(_tokenId) * _stablecoinToRealEstateRatio;
+
         allocator.enableToken(_tokenId);
         tokenConverter.convertAllocationToRealEstateErc20(_tokenId);
 
         address liquidTokenAddress = tokenConverter.getLiquidToken(_tokenId);
         uint liquidTokenBalance = IERC20Upgradeable(liquidTokenAddress).balanceOf(address(this));
-        uint stablecoinBalance = liquidTokenBalance * _stablecoinToRealEstateRatioBasisPoints / 10000;
 
         stablecoin.safeTransferFrom(msg.sender, address(this), stablecoinBalance);
 
