@@ -80,20 +80,20 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
 
         address liquidTokenAddress = tokenConverter.getLiquidToken(_tokenId);
         uint liquidTokenBalance = IERC20Upgradeable(liquidTokenAddress).balanceOf(address(this));
-        uint daiBalance = liquidTokenBalance * _stablecoinToRealEstateRatioBasisPoints / 10000;
+        uint stablecoinBalance = liquidTokenBalance * _stablecoinToRealEstateRatioBasisPoints / 10000;
 
-        stablecoin.safeTransferFrom(msg.sender, address(this), daiBalance);
+        stablecoin.safeTransferFrom(msg.sender, address(this), stablecoinBalance);
 
         _approveRouter(liquidTokenAddress, liquidTokenBalance);
-        _approveRouter(address(stablecoin), daiBalance);
+        _approveRouter(address(stablecoin), stablecoinBalance);
 
         router.addLiquidity(
             liquidTokenAddress,
             address(stablecoin),
             liquidTokenBalance,
-            daiBalance,
+            stablecoinBalance,
             liquidTokenBalance - liquidTokenBalance / 100,
-            daiBalance - daiBalance / 100,
+            stablecoinBalance - stablecoinBalance / 100,
             msg.sender,
             block.timestamp
         );
