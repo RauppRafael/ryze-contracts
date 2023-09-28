@@ -8,13 +8,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.so
 import "./abstract/RyzeOwnableUpgradeable.sol";
 import "./abstract/RyzeWhitelistUser.sol";
 import "./dex/RyzeRouter.sol";
+import "./interfaces/IERC20Decimals.sol";
 import "./libraries/Permit.sol";
 import "./RyzeTokenDatabase.sol";
 import "./RyzeToken.sol";
-
-interface IERC20Decimals {
-    function decimals() external view returns (uint8);
-}
 
 /**
  * @title RyzeAllocator
