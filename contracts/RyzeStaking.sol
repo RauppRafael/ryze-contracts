@@ -89,7 +89,7 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         uint _amount,
         Permit.ERC2612PermitInfo calldata _permitInfo
     ) external onlyWhitelisted {
-        Permit.approveERC2612(_getStakingToken(_tokenId, _isPair), _permitInfo);
+        Permit.approveErc2612(_getStakingToken(_tokenId, _isPair), _permitInfo);
 
         stakeERC20(_tokenId, _isPair, _amount);
     }

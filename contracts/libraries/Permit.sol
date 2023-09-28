@@ -21,7 +21,7 @@ library Permit {
         bytes32 s;
     }
 
-    function approveERC2612(
+    function approveErc2612(
         address _erc20,
         ERC2612PermitInfo calldata _permitInfo
     ) internal {

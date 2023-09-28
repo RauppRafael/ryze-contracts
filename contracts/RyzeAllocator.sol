@@ -127,6 +127,25 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     }
 
     /**
+     * @notice Allocates with the help of a permit.
+     * @dev This function uses the ERC1612 permit mechanism to allocate tokens without needing a separate approve transaction.
+     * @param _tokenId The ID of the token to be allocated.
+     * @param _amount The amount of tokens to be allocated.
+     * @param _referrer The address of the referrer.
+     * @param _permitInfo The permit details required for approving the token.
+     */
+    function allocateWithErc2612Permit(
+        uint _tokenId,
+        uint _amount,
+        address _referrer,
+        Permit.ERC2612PermitInfo calldata _permitInfo
+    ) external onlyWhitelisted {
+        Permit.approveErc2612(address(stablecoin), _permitInfo);
+
+        _allocate(_tokenId, _amount, _referrer, true);
+    }
+
+    /**
      * @notice Allocates using Ether by converting it to stablecoins first. Requires user to be whitelisted.
      * @dev This function first converts the received Ether to stablecoins using the router, then allocates the converted amount.
      * @param _tokenId The ID of the token to be allocated.
