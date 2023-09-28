@@ -55,7 +55,7 @@ const DAI_ADDR = '0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23'
         gnosis: gnosisSafeAddress,
         whitelistManager,
         weth,
-        dai,
+        stablecoin: dai,
         initialLiquidityBasisPoints: 1_000,
         referralRewardBasisPoints: 100,
         vanity: true,

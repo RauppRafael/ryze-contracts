@@ -59,7 +59,7 @@ describe('Allocator', () => {
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         allocationToken = contracts.allocationToken
         allocationRewardToken = contracts.allocationRewardToken
         allocator = contracts.allocator

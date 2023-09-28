@@ -42,7 +42,7 @@ describe('TokenConverter', () => {
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         tokenConverter = contracts.tokenConverter
         realEstateToken = contracts.realEstateToken
         liquidityInitializer = contracts.liquidityInitializer

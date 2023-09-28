@@ -42,7 +42,7 @@ describe('Liquidity initializer', () => {
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         realEstateToken = contracts.realEstateToken
         tokenConverter = contracts.tokenConverter
         liquidityInitializer = contracts.liquidityInitializer

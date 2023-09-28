@@ -53,7 +53,7 @@ describe('Dex', () => {
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         tokenConverter = contracts.tokenConverter
         liquidityInitializer = contracts.liquidityInitializer
         factory = contracts.factory

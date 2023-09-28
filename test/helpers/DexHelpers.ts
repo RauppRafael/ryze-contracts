@@ -11,19 +11,15 @@ const approveIfNeeded = async (token: Contract, owner: SignerWithAddress, spende
 }
 
 export class DexHelpers {
-    factory: RyzeFactory
-    router: RyzeRouter
-    dai: Dai
-
-    constructor(factory: RyzeFactory, router: RyzeRouter, dai: Dai) {
-        this.factory = factory
-        this.router = router
-        this.dai = dai
-    }
+    constructor(
+        public readonly factory: RyzeFactory,
+        public readonly router: RyzeRouter,
+        public readonly stablecoin: Dai,
+    ) {}
 
     async getPair(token: Contract) {
         return RyzePair__factory.connect(
-            await this.factory.getPair(token.address, this.dai.address),
+            await this.factory.getPair(token.address, this.stablecoin.address),
             await Hardhat.mainSigner(),
         )
     }
@@ -61,7 +57,7 @@ export class DexHelpers {
 
         await this.router.removeLiquidity(
             token.address,
-            this.dai.address,
+            this.stablecoin.address,
             Hardhat.parseEther(amount),
             0,
             0,
@@ -83,7 +79,7 @@ export class DexHelpers {
 
         await this.router.removeLiquidityWithPermit(
             token.address,
-            this.dai.address,
+            this.stablecoin.address,
             amount,
             0,
             0,
