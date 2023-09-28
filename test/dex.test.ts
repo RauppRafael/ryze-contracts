@@ -197,7 +197,7 @@ describe('Dex', () => {
                 await getDeadline(),
             )
 
-            pair = await RyzePair__factory.connect(
+            pair = RyzePair__factory.connect(
                 await factory.getPair(tokenA.address, tokenB.address),
                 deployer,
             )
