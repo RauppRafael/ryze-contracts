@@ -95,11 +95,11 @@ describe('Liquidity initializer', () => {
                 expect(
                     await liquidityInitializer.calculateStablecoinsRequired(
                         0,
-                        percentage * Math.pow(10, stablecoinDecimals),
+                        utils.parseUnits(percentage.toString(), stablecoinDecimals),
                     ),
                 ).to.equal(
                     utils.parseUnits(ONE_PERCENT_OF_MAX_SUPPLY.toString(), stablecoinDecimals)
-                        .mul(percentage)
+                        .mul(percentage),
                 )
             }
         })
