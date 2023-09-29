@@ -164,11 +164,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         path[0] = router.WETH();
         path[1] = address(stablecoin);
 
-        uint stablecoinDecimals = stablecoin.decimals();
+        uint8 stablecoinDecimals = stablecoin.decimals();
         uint realAmount = _min(
             _minAmount,
             _getAvailableAllocationAmount(_tokenId)
-        ) * (10 ** stablecoin.decimals());
+        ) * (10 ** stablecoinDecimals);
 
         if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
