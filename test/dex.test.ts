@@ -41,7 +41,8 @@ describe('Dex', () => {
         router: RyzeRouter,
         dexHelpers: DexHelpers,
         allocatorHelper: AllocatorHelper,
-        liquidToken: RyzeLiquidToken
+        liquidToken: RyzeLiquidToken,
+        stablecoinDecimals: number
 
     beforeEach(async () => {
         [
@@ -53,13 +54,14 @@ describe('Dex', () => {
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         tokenConverter = contracts.tokenConverter
         liquidityInitializer = contracts.liquidityInitializer
         factory = contracts.factory
         dexHelpers = contracts.dexHelpers
         router = contracts.router
         allocatorHelper = contracts.allocatorHelper
+        stablecoinDecimals = await dai.decimals()
 
         await dai.mint(deployer.address, Hardhat.parseEther(MAX_SUPPLY + 1_000_000))
 
@@ -69,7 +71,7 @@ describe('Dex', () => {
 
         await allocatorHelper.allocate(0, MAX_SUPPLY)
 
-        await liquidityInitializer.claimAndAddLiquidity(tokenId, 10000)
+        await liquidityInitializer.claimAndAddLiquidity(tokenId, utils.parseUnits('1', stablecoinDecimals))
         await tokenConverter.convertAllocationToRealEstateErc1155(0)
         await tokenConverter.convertRealEstateFromErc1155ToErc20(tokenId, 2_000_000)
 
@@ -92,7 +94,7 @@ describe('Dex', () => {
 
     it('Should swap', async () => {
         const amountIn = Hardhat.parseEther(10)
-        const amountOutMin = Hardhat.parseEther(9.9)
+        const amountOutMin = utils.parseUnits('9.9', stablecoinDecimals)
 
         await addLiquidity(liquidToken, 250_000, 250_000)
 
@@ -121,7 +123,7 @@ describe('Dex', () => {
 
     it('Should remove liquidity', async () => {
         const amountIn = Hardhat.parseEther(10)
-        const amountOutMin = Hardhat.parseEther(9.9)
+        const amountOutMin = utils.parseUnits('9.9', stablecoinDecimals)
 
         await addLiquidity(liquidToken, 1_000_000, 1_000_000)
 
@@ -195,7 +197,7 @@ describe('Dex', () => {
                 await getDeadline(),
             )
 
-            pair = await RyzePair__factory.connect(
+            pair = RyzePair__factory.connect(
                 await factory.getPair(tokenA.address, tokenB.address),
                 deployer,
             )

@@ -22,7 +22,7 @@ let loggedPairHash = false
 export class TestContractDeployer {
 
     public static async deployAll(): Promise<{
-        dai: Dai
+        stablecoin: Dai
         weth: WrappedEther
         allocationToken: RyzeToken
         allocationRewardToken: RyzeToken
@@ -46,7 +46,7 @@ export class TestContractDeployer {
             referralRewardBasisPoints: 100, // 1%
         })
         const {
-            dai,
+            stablecoin,
             whitelist,
             router,
             tokenConverter,
@@ -65,7 +65,7 @@ export class TestContractDeployer {
                 router.address,
                 tokenConverter.address,
                 realEstateToken.address,
-                dai.address,
+                stablecoin.address,
             ],
             { kind: 'uups' },
         ) as RyzeStaking
@@ -73,8 +73,8 @@ export class TestContractDeployer {
         await Promise.all([
             whitelist.updateUserWhitelistStatus(deployer.address, true),
 
-            dai.approve(allocator.address, constants.MaxUint256),
-            dai.approve(liquidityInitializer.address, constants.MaxUint256),
+            stablecoin.approve(allocator.address, constants.MaxUint256),
+            stablecoin.approve(liquidityInitializer.address, constants.MaxUint256),
         ])
 
         if (!loggedPairHash) {
@@ -86,7 +86,7 @@ export class TestContractDeployer {
         return {
             ...contracts,
             allocatorHelper: new AllocatorHelper(allocator, tokenDatabase),
-            dexHelpers: new DexHelpers(factory, router, dai),
+            dexHelpers: new DexHelpers(factory, router, stablecoin),
             staking,
         }
     }

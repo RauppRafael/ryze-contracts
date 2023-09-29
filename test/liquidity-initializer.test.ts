@@ -5,7 +5,7 @@ import { DexHelpers } from './helpers/DexHelpers'
 import { Hardhat } from 'hardhat-vanity'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { TestContractDeployer } from './helpers/TestContractDeployer'
-import { constants } from 'ethers'
+import { constants, utils } from 'ethers'
 import { createToken } from './helpers/create-token'
 import { solidity } from 'ethereum-waffle'
 import { waffle } from 'hardhat'
@@ -35,20 +35,22 @@ describe('Liquidity initializer', () => {
         liquidityInitializer: RyzeLiquidityInitializer,
         dexHelpers: DexHelpers,
         allocatorHelper: AllocatorHelper,
-        tokenDatabase: RyzeTokenDatabase
+        tokenDatabase: RyzeTokenDatabase,
+        stablecoinDecimals: number
 
     beforeEach(async () => {
         deployer = await Hardhat.mainSigner()
 
         const contracts = await waffle.loadFixture(TestContractDeployer.deployAll)
 
-        dai = contracts.dai
+        dai = contracts.stablecoin
         realEstateToken = contracts.realEstateToken
         tokenConverter = contracts.tokenConverter
         liquidityInitializer = contracts.liquidityInitializer
         tokenDatabase = contracts.tokenDatabase
         dexHelpers = contracts.dexHelpers
         allocatorHelper = contracts.allocatorHelper
+        stablecoinDecimals = await dai.decimals()
 
         await dai.mint(deployer.address, Hardhat.parseEther(DAI_AMOUNT))
         await createToken(tokenDatabase, MAX_SUPPLY)
@@ -59,7 +61,7 @@ describe('Liquidity initializer', () => {
 
         await allocatorHelper.allocate(TOKEN_ID, 1)
 
-        expect(await liquidityInitializer.allocation(TOKEN_ID)).to.equal(MAX_SUPPLY / 100)
+        expect(await liquidityInitializer.allocation(TOKEN_ID)).to.equal(ONE_PERCENT_OF_MAX_SUPPLY)
     })
 
     it('Shouldn\'t initialize before allocation period is over', async () => {
@@ -93,35 +95,37 @@ describe('Liquidity initializer', () => {
                 expect(
                     await liquidityInitializer.calculateStablecoinsRequired(
                         0,
-                        percentage * 100,
+                        utils.parseUnits(percentage.toString(), stablecoinDecimals),
                     ),
                 ).to.equal(
-                    Hardhat.parseEther(MAX_SUPPLY)
-                        .mul(percentage)
-                        .div(100)
-                        .div(100),
+                    utils.parseUnits(ONE_PERCENT_OF_MAX_SUPPLY.toString(), stablecoinDecimals)
+                        .mul(percentage),
                 )
             }
         })
 
         it('1 dai to 1 token', async () => {
-            await liquidityInitializer.claimAndAddLiquidity(TOKEN_ID, 10_000)
+            await liquidityInitializer.claimAndAddLiquidity(
+                TOKEN_ID,
+                utils.parseUnits('1', stablecoinDecimals),
+            )
 
             const liquidToken = await getLiquidToken(TOKEN_ID)
             const pair = await dexHelpers.getPair(liquidToken)
 
             expect(await pair.balanceOf(deployer.address))
-                .to.equal(Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY).sub(MINIMUM_LIQUIDITY))
+                .to.equal(utils.parseUnits(ONE_PERCENT_OF_MAX_SUPPLY.toString(), (18 + stablecoinDecimals) / 2).sub(MINIMUM_LIQUIDITY))
 
             expect(await liquidToken.balanceOf(pair.address))
                 .to.equal(Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY))
 
             expect(await dai.balanceOf(pair.address))
-                .to.equal(Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY))
+                .to.equal(utils.parseUnits(ONE_PERCENT_OF_MAX_SUPPLY.toString(), stablecoinDecimals))
         })
 
         it('1.01 dai to 1 token', async () => {
-            await liquidityInitializer.claimAndAddLiquidity(TOKEN_ID, 10_100)
+            const ratio = utils.parseUnits('1.01', stablecoinDecimals)
+            await liquidityInitializer.claimAndAddLiquidity(TOKEN_ID, ratio)
 
             const liquidToken = await getLiquidToken(TOKEN_ID)
             const pair = await dexHelpers.getPair(liquidToken)
@@ -133,10 +137,7 @@ describe('Liquidity initializer', () => {
                 .to.equal(Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY))
 
             expect(await dai.balanceOf(pair.address))
-                .to.equal(
-                    Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY)
-                        .add(Hardhat.parseEther(ONE_PERCENT_OF_MAX_SUPPLY).div(100)),
-                )
+                .to.equal(ratio.mul(ONE_PERCENT_OF_MAX_SUPPLY))
         })
     })
 })

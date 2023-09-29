@@ -3,6 +3,7 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 
 import "./abstract/RyzeOwnableUpgradeable.sol";
@@ -19,7 +20,7 @@ import "./RyzeToken.sol";
  * The contract tracks each token's allocation information and state.
  */
 contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20Upgradeable for IERC20MetadataUpgradeable;
 
     enum AllocationState {
         PRE_SALE,
@@ -38,7 +39,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     RyzeTokenDatabase public tokenDatabase;
     RyzeToken public allocationToken;
     RyzeToken public allocationRewardToken;
-    IERC20Upgradeable public stablecoin;
+    IERC20MetadataUpgradeable public stablecoin;
 
     uint16 public initialLiquidityBasisPoints; // 100 = 1%
     uint16 public referralRewardBasisPoints; // 100 = 1%
@@ -74,7 +75,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         liquidityInitializer = _liquidityInitializer;
         allocationToken = RyzeToken(_allocationToken);
         allocationRewardToken = RyzeToken(_allocationRewardToken);
-        stablecoin = IERC20Upgradeable(_stablecoin);
+        stablecoin = IERC20MetadataUpgradeable(_stablecoin);
         initialLiquidityBasisPoints = _initialLiquidityBasisPoints;
         referralRewardBasisPoints = _referralRewardBasisPoints;
     }
@@ -127,10 +128,29 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     }
 
     /**
+     * @notice Allocates with the help of a permit.
+     * @dev This function uses the ERC1612 permit mechanism to allocate tokens without needing a separate approve transaction.
+     * @param _tokenId The ID of the token to be allocated.
+     * @param _amount The amount of tokens to be allocated.
+     * @param _referrer The address of the referrer.
+     * @param _permitInfo The permit details required for approving the token.
+     */
+    function allocateWithErc2612Permit(
+        uint _tokenId,
+        uint _amount,
+        address _referrer,
+        Permit.ERC2612PermitInfo calldata _permitInfo
+    ) external onlyWhitelisted {
+        Permit.approveErc2612(address(stablecoin), _permitInfo);
+
+        _allocate(_tokenId, _amount, _referrer, true);
+    }
+
+    /**
      * @notice Allocates using Ether by converting it to stablecoins first. Requires user to be whitelisted.
      * @dev This function first converts the received Ether to stablecoins using the router, then allocates the converted amount.
      * @param _tokenId The ID of the token to be allocated.
-     * @param _minAmount The minimum amount of tokens expected to receive in the conversion.
+     * @param _minAmount The minimum amount of allocation tokens expected to receive in the conversion.
      * @param _referrer The address of the referrer.
      */
     function allocateWithEth(
@@ -144,7 +164,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         path[0] = router.WETH();
         path[1] = address(stablecoin);
 
-        uint realAmount = _min(_minAmount, _getAvailableAllocationAmount(_tokenId)) * 1e18;
+        uint8 stablecoinDecimals = stablecoin.decimals();
+        uint realAmount = _min(
+            _minAmount,
+            _getAvailableAllocationAmount(_tokenId)
+        ) * (10 ** stablecoinDecimals);
 
         if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
@@ -169,7 +193,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
 
         _allocate(
             _tokenId,
-            (stablecoin.balanceOf(address(this)) - initialBalance) / 1e18,
+            (stablecoin.balanceOf(address(this)) - initialBalance) / (10 ** stablecoinDecimals),
             _referrer,
             false
         );
@@ -206,7 +230,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
             revert InvalidAmount();
 
         if (_collectPayment)
-            stablecoin.safeTransferFrom(msg.sender, address(this), realAmount * 1e18);
+            stablecoin.safeTransferFrom(
+                msg.sender,
+                address(this),
+                realAmount * (10 ** stablecoin.decimals())
+            );
 
         _mintAllocation(_tokenId, realAmount, msg.sender, false);
 

@@ -24,7 +24,7 @@ export const deployProject = async ({
     gnosis,
     whitelistManager,
     weth,
-    dai,
+    stablecoin,
     initialLiquidityBasisPoints,
     referralRewardBasisPoints,
     vanity,
@@ -33,7 +33,7 @@ export const deployProject = async ({
     gnosis: string
     whitelistManager: string
     weth?: WrappedEther
-    dai?: Dai
+    stablecoin?: Dai
     initialLiquidityBasisPoints: number
     referralRewardBasisPoints: number
     vanity?: boolean
@@ -96,10 +96,10 @@ export const deployProject = async ({
         await weth.deployTransaction.wait(confirmations)
     }
 
-    if (!dai) {
-        dai = await new Dai__factory(deployer).deploy(await getChainId())
+    if (!stablecoin) {
+        stablecoin = await new Dai__factory(deployer).deploy(await getChainId())
 
-        await dai.deployTransaction.wait(confirmations)
+        await stablecoin.deployTransaction.wait(confirmations)
     }
 
     const factorySalt = await getImplementationHash('RyzeFactory')
@@ -116,7 +116,7 @@ export const deployProject = async ({
     const liquidityInitializerSalt = await getImplementationAndProxySalt('RyzeLiquidityInitializer')
     const allocatorSalt = await getImplementationAndProxySalt('RyzeAllocator')
 
-    ;(await projectDeployer.deployDex(
+    ;await (await projectDeployer.deployDex(
         gnosis,
         weth.address,
         {
@@ -129,7 +129,7 @@ export const deployProject = async ({
         },
     )).wait(confirmations)
 
-    ;(await projectDeployer.deployTokens(
+    ;await (await projectDeployer.deployTokens(
         gnosis,
         {
             allocationRewardTokenSalt,
@@ -142,10 +142,10 @@ export const deployProject = async ({
         },
     )).wait(confirmations)
 
-    ;(await projectDeployer.deployProject(
+    ;await (await projectDeployer.deployProject(
         gnosis,
         whitelistManager,
-        dai.address,
+        stablecoin.address,
         initialLiquidityBasisPoints,
         referralRewardBasisPoints,
         {
@@ -207,7 +207,7 @@ export const deployProject = async ({
 
     return {
         projectDeployer,
-        dai,
+        stablecoin,
         weth,
         allocationToken,
         allocationRewardToken,

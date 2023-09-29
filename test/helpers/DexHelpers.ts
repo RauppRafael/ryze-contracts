@@ -1,7 +1,7 @@
 import { Hardhat } from 'hardhat-vanity'
 import { Permit } from '@ryze-blockchain/shared'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import { BigNumber, Contract } from 'ethers'
+import { BigNumber, Contract, utils } from 'ethers'
 import { Dai, RyzeFactory, RyzePair__factory, RyzeRouter } from '../../types'
 import { getChainId, getDeadline } from '../../helpers/hardhat'
 
@@ -11,19 +11,16 @@ const approveIfNeeded = async (token: Contract, owner: SignerWithAddress, spende
 }
 
 export class DexHelpers {
-    factory: RyzeFactory
-    router: RyzeRouter
-    dai: Dai
-
-    constructor(factory: RyzeFactory, router: RyzeRouter, dai: Dai) {
-        this.factory = factory
-        this.router = router
-        this.dai = dai
+    constructor(
+        public readonly factory: RyzeFactory,
+        public readonly router: RyzeRouter,
+        public readonly stablecoin: Dai,
+    ) {
     }
 
     async getPair(token: Contract) {
         return RyzePair__factory.connect(
-            await this.factory.getPair(token.address, this.dai.address),
+            await this.factory.getPair(token.address, this.stablecoin.address),
             await Hardhat.mainSigner(),
         )
     }
@@ -35,8 +32,10 @@ export class DexHelpers {
         amountB: number,
         slippage: number,
     ) {
-        const ethAmountA = Hardhat.parseEther(amountA)
-        const ethAmountB = Hardhat.parseEther(amountB)
+        const decimalsA: number = await tokenA.decimals()
+        const decimalsB: number = await tokenB.decimals()
+        const ethAmountA = utils.parseUnits(amountA.toString(), decimalsA)
+        const ethAmountB = utils.parseUnits(amountB.toString(), decimalsB)
         const signer = await Hardhat.mainSigner()
 
         await approveIfNeeded(tokenA, signer, this.router, ethAmountA)
@@ -47,8 +46,8 @@ export class DexHelpers {
             tokenB.address,
             ethAmountA,
             ethAmountB,
-            Hardhat.parseEther(amountA - amountA * slippage),
-            Hardhat.parseEther(amountB - amountB * slippage),
+            utils.parseUnits((amountA - amountA * slippage).toString(), decimalsA),
+            utils.parseUnits((amountB - amountB * slippage).toString(), decimalsB),
             signer.address,
             await getDeadline(),
         )
@@ -61,7 +60,7 @@ export class DexHelpers {
 
         await this.router.removeLiquidity(
             token.address,
-            this.dai.address,
+            this.stablecoin.address,
             Hardhat.parseEther(amount),
             0,
             0,
@@ -83,7 +82,7 @@ export class DexHelpers {
 
         await this.router.removeLiquidityWithPermit(
             token.address,
-            this.dai.address,
+            this.stablecoin.address,
             amount,
             0,
             0,
