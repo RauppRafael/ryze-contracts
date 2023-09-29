@@ -59,7 +59,7 @@ contract RyzeToken allocationRewardToken
 ### stablecoin
 
 ```solidity
-contract IERC20Upgradeable stablecoin
+contract IERC20MetadataUpgradeable stablecoin
 ```
 
 ### initialLiquidityBasisPoints
@@ -173,6 +173,25 @@ _This function uses the DAI permit mechanism to allocate tokens without needing 
 | _referrer | address | The address of the referrer. |
 | _permitInfo | struct Permit.DaiPermitInfo | The permit details required for approving Dai. |
 
+### allocateWithErc2612Permit
+
+```solidity
+function allocateWithErc2612Permit(uint256 _tokenId, uint256 _amount, address _referrer, struct Permit.ERC2612PermitInfo _permitInfo) external
+```
+
+Allocates with the help of a permit.
+
+_This function uses the ERC1612 permit mechanism to allocate tokens without needing a separate approve transaction._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenId | uint256 | The ID of the token to be allocated. |
+| _amount | uint256 | The amount of tokens to be allocated. |
+| _referrer | address | The address of the referrer. |
+| _permitInfo | struct Permit.ERC2612PermitInfo | The permit details required for approving the token. |
+
 ### allocateWithEth
 
 ```solidity
@@ -188,7 +207,7 @@ _This function first converts the received Ether to stablecoins using the router
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the token to be allocated. |
-| _minAmount | uint256 | The minimum amount of tokens expected to receive in the conversion. |
+| _minAmount | uint256 | The minimum amount of allocation tokens expected to receive in the conversion. |
 | _referrer | address | The address of the referrer. |
 
 ### _mintAllocation

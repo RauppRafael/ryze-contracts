@@ -36,7 +36,7 @@ contract IERC1155Upgradeable realEstateToken
 ### stablecoin
 
 ```solidity
-contract IERC20Upgradeable stablecoin
+contract IERC20MetadataUpgradeable stablecoin
 ```
 
 ### accumulatedRewardPerToken
@@ -214,5 +214,11 @@ function _getRealEstateReserves(address _pair) internal view returns (uint112)
 
 ```solidity
 function _calculateRewardDebt(uint256 _tokenId, bool _isPair, uint256 _userStake) internal view returns (uint256)
+```
+
+### changeBase
+
+```solidity
+function changeBase(uint8 _from, uint8 _to, uint256 _amount) public pure returns (uint256 value_)
 ```
 

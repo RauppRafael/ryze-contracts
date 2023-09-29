@@ -65,7 +65,7 @@ Returns the balance of a given allocation ID.
 ### calculateStablecoinsRequired
 
 ```solidity
-function calculateStablecoinsRequired(uint256 _tokenId, uint256 _stablecoinToRealEstateRatioBasisPoints) external view returns (uint256)
+function calculateStablecoinsRequired(uint256 _tokenId, uint256 _stablecoinToRealEstateRatio) external view returns (uint256)
 ```
 
 Computes the amount of stablecoins needed to initialize liquidity for a specific token, based on a given ratio.
@@ -75,7 +75,7 @@ Computes the amount of stablecoins needed to initialize liquidity for a specific
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the allocation. |
-| _stablecoinToRealEstateRatioBasisPoints | uint256 | Ratio of stablecoins to real estate tokens in basis points. |
+| _stablecoinToRealEstateRatio | uint256 | Ratio of stablecoins to real estate tokens. |
 
 #### Return Values
 
@@ -86,7 +86,7 @@ Computes the amount of stablecoins needed to initialize liquidity for a specific
 ### claimAndAddLiquidity
 
 ```solidity
-function claimAndAddLiquidity(uint256 _tokenId, uint256 _stablecoinToRealEstateRatioBasisPoints) external
+function claimAndAddLiquidity(uint256 _tokenId, uint256 _stablecoinToRealEstateRatio) external
 ```
 
 Claims the allocation token, converts it into real estate ERC20, and adds it as liquidity.
@@ -96,7 +96,7 @@ Claims the allocation token, converts it into real estate ERC20, and adds it as 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _tokenId | uint256 | The ID of the token/allocation to claim and add as liquidity. |
-| _stablecoinToRealEstateRatioBasisPoints | uint256 | Ratio of stablecoins to real estate tokens in basis points for liquidity addition. |
+| _stablecoinToRealEstateRatio | uint256 | Ratio of stablecoins to real estate tokens for liquidity addition. |
 
 ### onERC1155Received
 

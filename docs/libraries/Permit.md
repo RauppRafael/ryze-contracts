@@ -25,10 +25,10 @@ struct DaiPermitInfo {
 }
 ```
 
-### approveERC2612
+### approveErc2612
 
 ```solidity
-function approveERC2612(address _erc20, struct Permit.ERC2612PermitInfo _permitInfo) internal
+function approveErc2612(address _erc20, struct Permit.ERC2612PermitInfo _permitInfo) internal
 ```
 
 ### approveDai
