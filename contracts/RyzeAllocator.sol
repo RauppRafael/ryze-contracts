@@ -3,12 +3,12 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 
 import "./abstract/RyzeOwnableUpgradeable.sol";
 import "./abstract/RyzeWhitelistUser.sol";
 import "./dex/RyzeRouter.sol";
-import "./interfaces/IERC20Decimals.sol";
 import "./libraries/Permit.sol";
 import "./RyzeTokenDatabase.sol";
 import "./RyzeToken.sol";
@@ -20,7 +20,7 @@ import "./RyzeToken.sol";
  * The contract tracks each token's allocation information and state.
  */
 contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20Upgradeable for IERC20MetadataUpgradeable;
 
     enum AllocationState {
         PRE_SALE,
@@ -39,11 +39,10 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     RyzeTokenDatabase public tokenDatabase;
     RyzeToken public allocationToken;
     RyzeToken public allocationRewardToken;
-    IERC20Upgradeable public stablecoin;
+    IERC20MetadataUpgradeable public stablecoin;
 
     uint16 public initialLiquidityBasisPoints; // 100 = 1%
     uint16 public referralRewardBasisPoints; // 100 = 1%
-    uint8 private stablecoinDecimals;
 
     mapping(uint => AllocationInfo) public allocationInfos;
     mapping(uint => uint) public disabledTokenValue;
@@ -76,10 +75,9 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         liquidityInitializer = _liquidityInitializer;
         allocationToken = RyzeToken(_allocationToken);
         allocationRewardToken = RyzeToken(_allocationRewardToken);
-        stablecoin = IERC20Upgradeable(_stablecoin);
+        stablecoin = IERC20MetadataUpgradeable(_stablecoin);
         initialLiquidityBasisPoints = _initialLiquidityBasisPoints;
         referralRewardBasisPoints = _referralRewardBasisPoints;
-        stablecoinDecimals = IERC20Decimals(_stablecoin).decimals();
     }
 
     /**
@@ -166,7 +164,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         path[0] = router.WETH();
         path[1] = address(stablecoin);
 
-        uint realAmount = _min(_minAmount, _getAvailableAllocationAmount(_tokenId)) * (10 ** stablecoinDecimals);
+        uint stablecoinDecimals = stablecoin.decimals();
+        uint realAmount = _min(
+            _minAmount,
+            _getAvailableAllocationAmount(_tokenId)
+        ) * (10 ** stablecoin.decimals());
 
         if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
@@ -228,7 +230,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
             revert InvalidAmount();
 
         if (_collectPayment)
-            stablecoin.safeTransferFrom(msg.sender, address(this), realAmount * (10 ** stablecoinDecimals));
+            stablecoin.safeTransferFrom(
+                msg.sender,
+                address(this),
+                realAmount * (10 ** stablecoin.decimals())
+            );
 
         _mintAllocation(_tokenId, realAmount, msg.sender, false);
 
