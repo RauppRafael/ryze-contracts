@@ -1,8 +1,9 @@
 {
 	"name": "ryze-toolkit",
 	"scripts": {
-		"test": "npx hardhat test",
-		"lint": "eslint . *.ts --fix",
+        "test": "npx hardhat test && npm run test:fork",
+		"test:fork": "cross-env HARDHAT_FORK=true npx hardhat test",
+        "lint": "eslint . *.ts --fix",
 		"deploy": "npx hardhat run scripts/deploy.ts && npm run validate:ownership && npm run init:pair",
 		"salt": "npx hardhat run scripts/liquid-token-salt.ts",
 		"validate:ownership": "npx hardhat run scripts/validate-ownership.ts",
@@ -25,6 +26,7 @@
 		"@typescript-eslint/eslint-plugin": "^4.33.0",
 		"@typescript-eslint/parser": "^4.33.0",
 		"chai": "^4.3.6",
+		"cross-env": "^7.0.3",
 		"eslint": "^7.32.0",
 		"eslint-config-standard": "^16.0.3",
 		"eslint-plugin-import": "^2.26.0",

@@ -17,13 +17,11 @@ import { chain, explorerKey, network, rpcs } from './helpers/chain.info'
 const accounts = process.env.DEPLOYER_PRIVATE_KEY
     ? [process.env.DEPLOYER_PRIVATE_KEY]
     : undefined
+const fork = process.env.HARDHAT_FORK === 'true'
 
 interface IHardhatConfig {
     version?: string,
     compilers?: string[],
-    paths?: {
-        sources?: string,
-    }
 }
 
 const getVersionBase = (version: string) => ({
@@ -50,7 +48,7 @@ const getNetworkBase = ({
     // gasPrice: 3000000000, // Enable this line for POLYGON
 })
 
-function hardhatConfig({ version, compilers, paths }: IHardhatConfig) {
+function hardhatConfig({ version, compilers }: IHardhatConfig) {
     let solidity
 
     if (version)
@@ -61,9 +59,13 @@ function hardhatConfig({ version, compilers, paths }: IHardhatConfig) {
 
     return {
         solidity: solidity || undefined,
-        paths,
+        paths: {
+            tests: fork ? './test-fork' : './test',
+        },
         networks: {
-            hardhat: {},
+            hardhat: fork
+                ? { forking: { url: rpcs.mainnet[chain].url } }
+                : {},
             [network]: getNetworkBase({
                 url: rpcs.testnet[chain].url,
                 chainId: rpcs.testnet[chain].chainId,
@@ -117,7 +119,4 @@ module.exports = hardhatConfig({
         '0.5.17', // Required for WETH
         '0.8.19',
     ],
-    paths: {
-        sources: './contracts',
-    },
 })

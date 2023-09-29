@@ -100,7 +100,7 @@ describe('Allocator', () => {
 
         const actualAmount = await allocatorHelper.getActualAllocationAmount(id, amount)
 
-        expect(await allocatorHelper.allocate(id, amount, { permit, signer }))
+        expect(await allocatorHelper.allocate(id, amount, { daiPermit: permit, signer }))
             .to.emit(allocationToken, 'TransferSingle')
 
         expect(await dai.balanceOf(signer.address))
@@ -138,6 +138,20 @@ describe('Allocator', () => {
         const wantAmount = MAX_SUPPLY / 10
 
         beforeEach(create)
+
+        it('Collects stablecoins', async () => {
+            const initialDeployerBalance = await dai.balanceOf(deployer.address)
+            const initialContractBalance = await dai.balanceOf(allocator.address)
+
+            await allocator.allocate(0, 1_000, hre.ethers.constants.AddressZero)
+
+            const parsedAmount = parseUnits(1_000, stablecoinDecimals)
+
+            expect(await dai.balanceOf(deployer.address))
+                .to.equal(initialDeployerBalance.sub(parsedAmount))
+            expect(await dai.balanceOf(allocator.address))
+                .to.equal(initialContractBalance.add(parsedAmount))
+        })
 
         it('Allocates the exact max supply', async () => {
             await allocator.allocate(0, 1, hre.ethers.constants.AddressZero)
