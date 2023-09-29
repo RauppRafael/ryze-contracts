@@ -39,7 +39,7 @@ enum TokenType {
     PAIR,
 }
 
-describe.only('Staking', () => {
+describe('Staking', () => {
     let deployer: SignerWithAddress,
         signers: SignerWithAddress[],
         testers: ITester[],
