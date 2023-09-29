@@ -4,7 +4,7 @@ import { Hardhat } from 'hardhat-vanity'
 import { Permit } from '@ryze-blockchain/shared'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { TestContractDeployer } from './helpers/TestContractDeployer'
-import { constants } from 'ethers'
+import { constants, utils } from 'ethers'
 import { createToken } from './helpers/create-token'
 import { getLiquidToken } from './helpers/get-liquid-token'
 import { solidity } from 'ethereum-waffle'
@@ -39,7 +39,7 @@ enum TokenType {
     PAIR,
 }
 
-describe('Staking', () => {
+describe.only('Staking', () => {
     let deployer: SignerWithAddress,
         signers: SignerWithAddress[],
         testers: ITester[],
@@ -53,15 +53,23 @@ describe('Staking', () => {
         router: RyzeRouter,
         dexHelpers: DexHelpers,
         pair: RyzePair,
-        whitelist: RyzeWhitelist
+        whitelist: RyzeWhitelist,
+        stableDecimals: number,
+        pairMultiplier: number
 
-    const forAllTesters = (callback: (tester: ITester) => void) => Promise.all(testers.map(callback))
+    function parseUnits(value: number, decimals: number) {
+        return utils.parseUnits(value.toString(), decimals)
+    }
 
-    const stakeAll = async (tokenType: TokenType) => {
+    function forAllTesters(callback: (tester: ITester) => void) {
+        return Promise.all(testers.map(callback))
+    }
+
+    async function stakeAll(tokenType: TokenType) {
         const isPair = tokenType === TokenType.PAIR
 
         await forAllTesters(async tester => {
-            const stakedAmount = Hardhat.parseEther(tester.percentage)
+            const stakedAmount = parseUnits(tester.percentage, isPair ? pairMultiplier : 18)
 
             if (tokenType === TokenType.NFT)
                 await staking.connect(tester.signer).stakeERC1155(0, stakedAmount.div(Hardhat.parseEther(1)))
@@ -112,6 +120,8 @@ describe('Staking', () => {
         dexHelpers = contracts.dexHelpers
         realEstateToken = contracts.realEstateToken
         whitelist = contracts.whitelist
+        stableDecimals = await dai.decimals()
+        pairMultiplier = (18 + stableDecimals) / 2
 
         await dai.mint(deployer.address, Hardhat.parseEther(MAX_SUPPLY + 1_000_000))
         await dai.approve(staking.address, constants.MaxUint256)
@@ -120,7 +130,7 @@ describe('Staking', () => {
 
         await allocatorHelper.allocate(0, MAX_SUPPLY)
 
-        await liquidityInitializer.claimAndAddLiquidity(tokenId, 10_000)
+        await liquidityInitializer.claimAndAddLiquidity(tokenId, parseUnits(1, stableDecimals))
         await tokenConverter.convertAllocationToRealEstateErc20(0)
 
         liquidToken = await getLiquidToken(tokenConverter, 0, deployer)
@@ -134,7 +144,7 @@ describe('Staking', () => {
         await forAllTesters(async tester => {
             await whitelist.updateUserWhitelistStatus(tester.signer.address, true)
 
-            await pair.transfer(tester.signer.address, Hardhat.parseEther(tester.percentage))
+            await pair.transfer(tester.signer.address, parseUnits(tester.percentage, pairMultiplier))
 
             await pair
                 .connect(tester.signer)
@@ -289,7 +299,7 @@ describe('Staking', () => {
             await forAllTesters(async tester => {
                 await staking
                     .connect(tester.signer)
-                    .stakeERC20(0, true, Hardhat.parseEther(tester.percentage))
+                    .stakeERC20(0, true, parseUnits(tester.percentage, pairMultiplier))
 
                 expect(await dai.balanceOf(tester.signer.address))
                     .to.equal(0)
@@ -297,45 +307,46 @@ describe('Staking', () => {
 
             await staking.distribute(0, Hardhat.parseEther(100))
 
-            await pair.transfer(derp.address, Hardhat.parseEther(100))
+            await pair.transfer(derp.address, parseUnits(100, pairMultiplier))
             await pair.connect(derp).approve(staking.address, constants.MaxUint256)
             await dexHelpers.swap(dai, liquidToken, Hardhat.parseEther(500), Hardhat.parseEther(100))
 
             expect(await dai.balanceOf(derp.address)).to.equal(0)
 
-            await staking.connect(derp).stakeERC20(0, true, Hardhat.parseEther(10))
+            await staking.connect(derp).stakeERC20(0, true, parseUnits(10, pairMultiplier))
             await staking.connect(derp).claimRewards(0, true)
             await forAllTesters(tester => staking.connect(tester.signer).claimRewards(0, true))
             await staking.connect(derp).claimRewards(0, true)
 
             expect(await dai.balanceOf(derp.address)).to.equal(0)
 
-            await forAllTesters(
-                async tester => expect(await dai.balanceOf(tester.signer.address))
-                    .to.equal(Hardhat.parseEther(tester.percentage)),
-            )
+            await forAllTesters(async tester => {
+                expect(await dai.balanceOf(tester.signer.address))
+                    .to.equal(Hardhat.parseEther(tester.percentage))
+            })
         })
     })
 
     it('Stakes mixed liquid tokens and pairs', async () => {
         await forAllTesters(async tester => {
-            const amount = Hardhat.parseEther(tester.percentage)
+            const liquidAmount = Hardhat.parseEther(tester.percentage)
+            const pairAmount = parseUnits(tester.percentage, pairMultiplier)
 
             await staking
                 .connect(tester.signer)
-                .stakeERC20(0, true, amount)
+                .stakeERC20(0, true, pairAmount)
 
             await staking
                 .connect(tester.signer)
-                .stakeERC20(0, false, amount)
+                .stakeERC20(0, false, liquidAmount)
 
             const pairUserInfo = await staking.userInfo(0, true, tester.signer.address)
             const liquidTokenUserInfo = await staking.userInfo(0, false, tester.signer.address)
 
-            expect(pairUserInfo.stake_).to.equal(amount)
+            expect(pairUserInfo.stake_).to.equal(pairAmount)
             expect(pairUserInfo.pendingRewards_).to.equal(0)
 
-            expect(liquidTokenUserInfo.stake_).to.equal(amount)
+            expect(liquidTokenUserInfo.stake_).to.equal(liquidAmount)
             expect(liquidTokenUserInfo.pendingRewards_).to.equal(0)
 
             expect(await dai.balanceOf(tester.signer.address))

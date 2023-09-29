@@ -177,19 +177,21 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         address liquidToken = tokenConverter.getLiquidToken(_tokenId);
         address pair = _getPair(_tokenId);
 
+        uint8 stableDecimals = stablecoin.decimals();
+        uint parsedAmount = changeBase(stableDecimals, 18, _amount);
         uint liquidTokenBalance = _balance(liquidToken);
         uint pairBalance = _balance(pair);
         uint pairUnderlyingBalance = pairBalance * _getRealEstateReserves(pair) / IERC20MetadataUpgradeable(pair).totalSupply();
         uint totalRealEstateBalance = liquidTokenBalance + pairUnderlyingBalance;
 
-        uint rewardsToLiquid = _amount * liquidTokenBalance / totalRealEstateBalance;
-        uint rewardsToPair = _amount * pairUnderlyingBalance / totalRealEstateBalance;
+        uint rewardsToLiquid = parsedAmount * liquidTokenBalance / totalRealEstateBalance;
+        uint rewardsToPair = parsedAmount * pairUnderlyingBalance / totalRealEstateBalance;
 
         accumulatedRewardPerToken[_tokenId][false] += liquidTokenBalance > 0
-            ? rewardsToLiquid * 1e18 / liquidTokenBalance
+            ? changeBase(18, stableDecimals, rewardsToLiquid * 1e18 / liquidTokenBalance)
             : 0;
         accumulatedRewardPerToken[_tokenId][true] += pairBalance > 0
-            ? rewardsToPair * 1e18 / pairBalance
+            ? changeBase(18, stableDecimals, rewardsToPair * 1e18 / pairBalance)
             : 0;
     }
 
@@ -240,6 +242,13 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
     }
 
     function _calculateRewardDebt(uint _tokenId, bool _isPair, uint _userStake) internal view returns (uint) {
-        return _userStake * accumulatedRewardPerToken[_tokenId][_isPair] / 1e18;
+        uint8 stableDecimals = stablecoin.decimals();
+        uint parsedStake = changeBase(18, stableDecimals, _userStake);
+
+        return parsedStake * accumulatedRewardPerToken[_tokenId][_isPair] / (10 ** stableDecimals);
+    }
+
+    function changeBase(uint8 _from, uint8 _to, uint _amount) public pure returns (uint256 value_) {
+        return (_amount * 10 ** _to) / (10 ** _from);
     }
 }
