@@ -52,8 +52,8 @@ export const rpcs: IRpcMap = {
             chainId: 5,
         },
         ARBITRUM: {
-            url: '',  // TODO arb
-            chainId: 0,  // TODO arb
+            url: 'https://arb1.arbitrum.io/rpc',
+            chainId: 42161,
         },
     },
     testnet: {

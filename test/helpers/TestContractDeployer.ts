@@ -5,6 +5,7 @@ import { constants } from 'ethers'
 import { deployProject } from '../../helpers/deploy-project'
 import {
     Dai,
+    Dai__factory,
     RyzeAllocator,
     RyzeFactory,
     RyzeLiquidityInitializer,
@@ -16,6 +17,8 @@ import {
     RyzeWhitelist,
 } from '../../types'
 import hre, { upgrades } from 'hardhat'
+
+const USDT_ADDRESS = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'
 
 let loggedPairHash = false
 
@@ -38,9 +41,11 @@ export class TestContractDeployer {
         staking: RyzeStaking
         whitelist: RyzeWhitelist
     }> {
+        const fork = process.env.HARDHAT_FORK === 'true'
         const [deployer] = await hre.ethers.getSigners()
         const contracts = await deployProject({
             gnosis: deployer.address,
+            stablecoin: fork ? Dai__factory.connect(USDT_ADDRESS, deployer) : undefined,
             whitelistManager: deployer.address,
             initialLiquidityBasisPoints: 100, // 1%
             referralRewardBasisPoints: 100, // 1%

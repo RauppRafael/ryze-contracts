@@ -26,11 +26,13 @@ export class AllocatorHelper {
         {
             referrer,
             signer,
-            permit,
+            daiPermit,
+            erc2612Permit,
         }: {
             referrer?: string
             signer?: SignerWithAddress
-            permit?: Permit.DaiPermitInfoStruct
+            daiPermit?: Permit.DaiPermitInfoStruct
+            erc2612Permit?: Permit.ERC2612PermitInfoStruct
         } = {},
     ) {
         signer = signer || await Hardhat.mainSigner()
@@ -38,8 +40,12 @@ export class AllocatorHelper {
 
         const contract = this.allocator.connect(signer)
 
-        return permit
-            ? await contract.allocateWithDaiPermit(realEstateTokenId, amount, referrer, permit)
-            : await contract.allocate(realEstateTokenId, amount, referrer)
+        if (daiPermit)
+            return await contract.allocateWithDaiPermit(realEstateTokenId, amount, referrer, daiPermit)
+
+        if (erc2612Permit)
+            return contract.allocateWithErc2612Permit(realEstateTokenId, amount, referrer, erc2612Permit)
+
+        return await contract.allocate(realEstateTokenId, amount, referrer)
     }
 }
