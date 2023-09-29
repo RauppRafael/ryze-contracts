@@ -1,6 +1,5 @@
 import { AllocationState } from './helpers/enums'
 import { AllocatorHelper } from './helpers/AllocatorHelper'
-import { Hardhat } from 'hardhat-vanity'
 import { Permit } from '../types/contracts/RyzeAllocator'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { TestContractDeployer } from './helpers/TestContractDeployer'
@@ -33,6 +32,10 @@ const REFERRAL_REWARD_PERCENTAGE = 1
 
 const initialLiquidityAllocation = MAX_SUPPLY * INITIAL_LIQUIDITY_PERCENTAGE / 100
 
+function parseUnits(value: number, decimals: number) {
+    return utils.parseUnits(value.toString(), decimals)
+}
+
 describe('Allocator', () => {
     let deployer: SignerWithAddress,
         user: SignerWithAddress,
@@ -50,10 +53,6 @@ describe('Allocator', () => {
         whitelist: RyzeWhitelist,
         weth: WrappedEther,
         stablecoinDecimals: number
-
-    function parseUnits(value: number, decimals?: number) {
-        return utils.parseUnits(value.toString(), decimals || stablecoinDecimals)
-    }
 
     beforeEach(async () => {
         [
@@ -105,7 +104,7 @@ describe('Allocator', () => {
             .to.emit(allocationToken, 'TransferSingle')
 
         expect(await dai.balanceOf(signer.address))
-            .to.equal(initialDaiBalance.sub(parseUnits(actualAmount)))
+            .to.equal(initialDaiBalance.sub(parseUnits(actualAmount, stablecoinDecimals)))
 
         expect(await allocationToken.balanceOf(signer.address, id))
             .to.equal(initialAllocation.add(actualAmount))
@@ -206,7 +205,7 @@ describe('Allocator', () => {
             for (let index = 0; index < 10; index++)
                 await allocate(0, wantAmount)
 
-            const salePrice = parseUnits(1)
+            const salePrice = parseUnits(1, stablecoinDecimals)
             const royaltyInfo = await allocationToken.royaltyInfo(0, salePrice)
 
             expect(royaltyInfo[0]).to.equal(deployer.address)
@@ -225,7 +224,7 @@ describe('Allocator', () => {
         beforeEach(async () => {
             await create()
 
-            const daiLiquidity = parseUnits(10_000_000)
+            const daiLiquidity = parseUnits(10_000_000, stablecoinDecimals)
             const ethLiquidity = daiLiquidity.div(ethPrice)
 
             await dai.approve(router.address, constants.MaxUint256)
@@ -243,7 +242,7 @@ describe('Allocator', () => {
 
         it('Mints allocation token using ETH', async () => {
             const desiredAllocation = 500_000
-            const ethInput = parseUnits(desiredAllocation).div(ethPrice) // aprox. 500_000 shares
+            const ethInput = parseUnits(desiredAllocation, stablecoinDecimals).div(ethPrice) // aprox. 500_000 shares
             const expectedOutputs = await getOutputAmount(ethInput)
             const minAllocation = expectedOutputs[expectedOutputs.length - 1]
             const transaction = await allocator.allocateWithEth(
@@ -257,7 +256,7 @@ describe('Allocator', () => {
 
             const allocatedAmount = await allocationToken.balanceOf(deployer.address, tokenId)
 
-            expect(allocatedAmount).to.gte(minAllocation.div(parseUnits(1)))
+            expect(allocatedAmount).to.gte(minAllocation.div(parseUnits(1, stablecoinDecimals)))
             expect(allocatedAmount).to.gte(desiredAllocation - desiredAllocation * 10 / 100) // -10%
         })
 
@@ -265,14 +264,14 @@ describe('Allocator', () => {
             const userAmount = 900_000
 
             // First a user mints 900_000 tokens out of 1_000_000 using DAI
-            await dai.mint(user.address, parseUnits(userAmount))
-            await dai.connect(user).approve(allocator.address, parseUnits(userAmount))
+            await dai.mint(user.address, parseUnits(userAmount, stablecoinDecimals))
+            await dai.connect(user).approve(allocator.address, parseUnits(userAmount, stablecoinDecimals))
             await allocate(0, userAmount, { signer: user })
 
             // Then someone tries to mint another 500_000 but with ETH
             const initialEthBalance = await deployer.getBalance()
             const desiredAllocation = 500_000
-            const ethInput = parseUnits(desiredAllocation).div(ethPrice) // aprox. 500_000 shares
+            const ethInput = parseUnits(desiredAllocation, stablecoinDecimals).div(ethPrice) // aprox. 500_000 shares
             const expectedOutputs = await getOutputAmount(ethInput)
             const minAllocation = expectedOutputs[expectedOutputs.length - 1]
             const allocateTransaction = await allocator.allocateWithEth(
@@ -293,7 +292,7 @@ describe('Allocator', () => {
             const ethUsedAsGas = gasUsed.mul(gasPrice)
             const balanceAfter = await deployer.getBalance()
             const expectedAllocationAmount = MAX_SUPPLY - userAmount - initialLiquidityAllocation
-            const expectedEthSpentAsPayment = parseUnits(expectedAllocationAmount).div(ethPrice)
+            const expectedEthSpentAsPayment = parseUnits(expectedAllocationAmount, stablecoinDecimals).div(ethPrice)
             const ethSpentAsPayment = initialEthBalance.sub(balanceAfter).sub(ethUsedAsGas)
 
             const allocatedAmount = await allocationToken.balanceOf(deployer.address, tokenId)
@@ -376,11 +375,11 @@ describe('Allocator', () => {
 
         it('Claims dai', async () => {
             const amount = MAX_SUPPLY / 2
-            const amountEth = parseUnits(amount)
+            const amountEth = parseUnits(amount, stablecoinDecimals)
             const initialBalance = await dai.balanceOf(deployer.address)
 
-            await dai.mint(user.address, parseUnits(MAX_SUPPLY))
-            await dai.connect(user).approve(allocator.address, parseUnits(MAX_SUPPLY))
+            await dai.mint(user.address, parseUnits(MAX_SUPPLY, stablecoinDecimals))
+            await dai.connect(user).approve(allocator.address, parseUnits(MAX_SUPPLY, stablecoinDecimals))
             await allocatorHelper.allocate(tokenId, amount, { signer: user })
             await allocator.claimStablecoins()
 
@@ -393,7 +392,7 @@ describe('Allocator', () => {
             const allocatedAmount = MAX_SUPPLY - initialLiquidityAllocation
 
             expect(await dai.balanceOf(deployer.address))
-                .to.equal(initialBalance.add(parseUnits(allocatedAmount)))
+                .to.equal(initialBalance.add(parseUnits(allocatedAmount, stablecoinDecimals)))
 
             expect(allocatedAmount)
                 .to.equal(await allocationToken.balanceOf(user.address, tokenId))
@@ -419,7 +418,7 @@ describe('Allocator', () => {
                 .to.emit(allocationToken, 'TransferSingle')
 
             expect(await dai.balanceOf(deployer.address))
-                .to.equal(initialDaiBalance.sub(parseUnits(amount)))
+                .to.equal(initialDaiBalance.sub(parseUnits(amount, stablecoinDecimals)))
 
             expect(await allocationRewardToken.balanceOf(referrer.address, 0))
                 .to.equal(expectedReferralAmount)
@@ -447,7 +446,7 @@ describe('Allocator', () => {
 
             const daiClaimed = (await dai.balanceOf(deployer.address)).sub(initialOwnerBalance)
 
-            expect(BigNumber.from(MAX_SUPPLY).sub(daiClaimed.div(parseUnits(1))))
+            expect(BigNumber.from(MAX_SUPPLY).sub(daiClaimed.div(parseUnits(1, stablecoinDecimals))))
                 .to.equal(initialLiquidityAllocation + expectedReferralAllocation)
 
             await liquidityInitializer.claimAndAddLiquidity(0, 10000)
@@ -466,8 +465,8 @@ describe('Allocator', () => {
         const amount = 100_000
 
         beforeEach(async () => {
-            await dai.mint(user.address, parseUnits(amount))
-            await dai.connect(user).approve(allocator.address, parseUnits(amount))
+            await dai.mint(user.address, parseUnits(amount, stablecoinDecimals))
+            await dai.connect(user).approve(allocator.address, parseUnits(amount, stablecoinDecimals))
             await allocationToken.connect(user).setApprovalForAll(allocator.address, true)
             await allocationToken.connect(referrer).setApprovalForAll(allocator.address, true)
             await allocationRewardToken.connect(referrer).setApprovalForAll(allocator.address, true)
@@ -482,21 +481,21 @@ describe('Allocator', () => {
         })
 
         async function burnAllocation(value: number) {
-            await allocator.disableToken(tokenId, parseUnits(value))
+            await allocator.disableToken(tokenId, parseUnits(value, stablecoinDecimals))
 
             const initialBalanceDai = await dai.balanceOf(user.address)
 
             await allocator.connect(user).burnAllocation(0)
 
             expect(await dai.balanceOf(user.address))
-                .to.equal(initialBalanceDai.add(parseUnits(amount).mul(value * 100).div(100)))
+                .to.equal(initialBalanceDai.add(parseUnits(amount, stablecoinDecimals).mul(value * 100).div(100)))
         }
 
         it('Burns allocations 1:1.1', async () => {
             await expect(burnAllocation(1.1)).to.be.revertedWith('Dai/insufficient-balance')
         })
         it('Burns allocations 1:1.1', async () => {
-            await dai.mint(allocator.address, parseUnits(100_000))
+            await dai.mint(allocator.address, parseUnits(100_000, stablecoinDecimals))
             await burnAllocation(1.01)
         })
         it('Burns allocations 1:1', () => burnAllocation(1))
@@ -504,7 +503,7 @@ describe('Allocator', () => {
         it('Burns allocations 1:0.9', () => burnAllocation(0.9))
 
         it('Cannot burn rewarded allocation', async () => {
-            await allocator.disableToken(tokenId, parseUnits(.9))
+            await allocator.disableToken(tokenId, parseUnits(.9, stablecoinDecimals))
 
             await expect(allocator.connect(referrer).burnAllocation(0))
                 .to.be.revertedWith(AllocatorErrors.InsufficientBalance)
