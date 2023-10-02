@@ -31,13 +31,14 @@ const DAI_ADDR = '0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23'
     if (!salt)
         throw new Error('Missing STARTS_WITH env')
 
-    await Storage.save({ type: StorageType.ADDRESS, name: 'WrappedEther', value: WETH_ADDR })
-    await Storage.save({ type: StorageType.ADDRESS, name: 'Dai', value: DAI_ADDR })
-
     const gnosisSalt = `0x${ salt.repeat(5) }`
 
     const gnosisSafeAddress = await GnosisDeployer
         .calculateGnosisProxyAddress(gnosisSalt, [owner], 1)
+
+    await Storage.save({ type: StorageType.ADDRESS, name: 'GnosisSafe', value: gnosisSafeAddress })
+    await Storage.save({ type: StorageType.ADDRESS, name: 'WrappedEther', value: WETH_ADDR })
+    await Storage.save({ type: StorageType.ADDRESS, name: 'Stablecoin', value: STABLECOIN_ADDR })
 
     const {
         projectDeployer,
