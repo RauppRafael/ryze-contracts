@@ -7,14 +7,14 @@ import { Hardhat, Storage, StorageType } from 'hardhat-vanity'
 
 // TODO update weth and dai addresses
 const WETH_ADDR = '0x1d308089a2d1ced3f1ce36b1fcaf815b07217be3'
-const DAI_ADDR = '0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23'
+const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
 
 ;(async () => {
     const signer = await Hardhat.mainSigner()
     const owner = process.env.OWNER_ADDRESS // TODO update owner address
     const whitelistManager = process.env.WHITELIST_MANAGER // TODO update manager address
     const weth = WrappedEther__factory.connect(WETH_ADDR, hre.ethers.provider)
-    const dai = Dai__factory.connect(DAI_ADDR, hre.ethers.provider)
+    const stablecoin = Dai__factory.connect(STABLECOIN_ADDR, hre.ethers.provider)
 
     const nonce = await signer.getTransactionCount()
     const salt = process.env.STARTS_WITH
@@ -56,9 +56,9 @@ const DAI_ADDR = '0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23'
         gnosis: gnosisSafeAddress,
         whitelistManager,
         weth,
-        stablecoin: dai,
-        initialLiquidityBasisPoints: 1_000,
-        referralRewardBasisPoints: 100,
+        stablecoin,
+        initialLiquidityBasisPoints: 1_000, // 10%
+        referralRewardBasisPoints: 150, // 1.5%
         vanity: true,
         confirmations: 5,
     })
