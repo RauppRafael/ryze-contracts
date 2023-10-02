@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { utils } from 'ethers'
 import hre from 'hardhat'
 import {
     Dai__factory,
@@ -12,28 +13,34 @@ import { getDeadline, sendTransaction } from '../helpers/hardhat'
 (async () => {
     const signer = await Hardhat.mainSigner()
     const wethAddress = await Storage.findAddress('WrappedEther')
-    const daiAddress = await Storage.findAddress('Dai')
+    const stablecoinAddress = await Storage.findAddress('Stablecoin')
     const routerAddress = await Storage.findAddress('RyzeRouter')
     const factoryAddress = await Storage.findAddress('RyzeFactory')
 
-    if (!wethAddress || !daiAddress || !routerAddress || !factoryAddress)
+    if (!wethAddress || !stablecoinAddress || !routerAddress || !factoryAddress)
         throw new Error('Address not found')
 
-    const dai = Dai__factory.connect(daiAddress, signer)
+    const stablecoin = Dai__factory.connect(stablecoinAddress, signer)
     const router = RyzeRouter__factory.connect(routerAddress, signer)
     const factory = RyzeFactory__factory.connect(factoryAddress, signer)
 
     const ethPrice: number = (await axios('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')).data.ethereum.usd
+    const stablecoinDecimals = await stablecoin.decimals()
 
     if (network === TESTNET)
-        await sendTransaction(dai.mint(signer.address, Hardhat.parseEther(15_000_000)))
+        await sendTransaction(
+            stablecoin.mint(
+                signer.address,
+                utils.parseUnits((15_000_000).toString(), stablecoinDecimals),
+            ),
+        )
 
-    await sendTransaction(dai.approve(router.address, hre.ethers.constants.MaxUint256))
+    await sendTransaction(stablecoin.approve(router.address, hre.ethers.constants.MaxUint256))
 
     await sendTransaction(
         router.addLiquidityETH(
-            dai.address,
-            Hardhat.parseEther(ethPrice),
+            stablecoin.address,
+            utils.parseUnits(ethPrice.toString(), stablecoinDecimals),
             0,
             0,
             signer.address,
@@ -42,11 +49,11 @@ import { getDeadline, sendTransaction } from '../helpers/hardhat'
         ),
     )
 
-    const pairAddress = await factory.getPair(dai.address, wethAddress)
+    const pairAddress = await factory.getPair(stablecoin.address, wethAddress)
 
     await Storage.save({
         type: StorageType.ADDRESS,
-        name: 'EthDaiPair',
+        name: 'EthStablecoinPair',
         value: pairAddress,
     })
 
