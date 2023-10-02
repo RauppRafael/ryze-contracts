@@ -87,9 +87,8 @@ function hardhatConfig({ version, compilers }: IHardhatConfig) {
                 'Ryze',
                 'WrappedEther',
                 'Dai',
+                'ERC20Permit',
                 'LiquidToken',
-                'Disperse',
-                'RewardDistributor',
             ],
             except: [
                 'IRyze',
