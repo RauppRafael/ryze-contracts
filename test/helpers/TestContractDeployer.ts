@@ -49,6 +49,7 @@ export class TestContractDeployer {
             whitelistManager: deployer.address,
             initialLiquidityBasisPoints: 100, // 1%
             referralRewardBasisPoints: 100, // 1%
+            referredUserBonus: 10,
         })
         const {
             stablecoin,

@@ -125,6 +125,7 @@ contract ProjectDeployer is Ownable {
         address _stablecoin,
         uint16 _initialLiquidityBasisPoints,
         uint16 _referralRewardBasisPoints,
+        uint16 _referredUserBonus,
         ProjectDeploymentInfo calldata _projectInfo
     ) external onlyOwner {
         // Deploy Project
@@ -172,7 +173,8 @@ contract ProjectDeployer is Ownable {
             allocationToken,
             _stablecoin,
             _initialLiquidityBasisPoints,
-            _referralRewardBasisPoints
+            _referralRewardBasisPoints,
+            _referredUserBonus
         );
         RyzeLiquidityInitializer(liquidityInitializer.proxy).initialize(
             _gnosisSafe,

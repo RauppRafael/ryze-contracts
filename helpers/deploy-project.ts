@@ -27,6 +27,7 @@ export const deployProject = async ({
     stablecoin,
     initialLiquidityBasisPoints,
     referralRewardBasisPoints,
+    referredUserBonus,
     vanity,
     confirmations = 1,
 }: {
@@ -36,6 +37,7 @@ export const deployProject = async ({
     stablecoin?: Dai
     initialLiquidityBasisPoints: number
     referralRewardBasisPoints: number
+    referredUserBonus: number
     vanity?: boolean
     confirmations?: number
 }) => {
@@ -148,6 +150,7 @@ export const deployProject = async ({
         stablecoin.address,
         initialLiquidityBasisPoints,
         referralRewardBasisPoints,
+        referredUserBonus,
         {
             whitelist: {
                 code: RyzeWhitelist__factory.bytecode,

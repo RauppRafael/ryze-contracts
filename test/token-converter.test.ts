@@ -12,6 +12,7 @@ import {
     RyzeToken,
     RyzeTokenConverter,
     RyzeTokenDatabase,
+    RyzeWhitelist,
 } from '../types'
 import chai, { expect } from 'chai'
 import hre, { waffle } from 'hardhat'
@@ -33,7 +34,8 @@ describe('TokenConverter', () => {
         liquidityInitializer: RyzeLiquidityInitializer,
         tokenDatabase: RyzeTokenDatabase,
         allocationRewardToken: RyzeToken,
-        allocatorHelper: AllocatorHelper
+        allocatorHelper: AllocatorHelper,
+        whitelist: RyzeWhitelist
 
     beforeEach(async () => {
         const signers = await hre.ethers.getSigners()
@@ -49,6 +51,7 @@ describe('TokenConverter', () => {
         allocatorHelper = contracts.allocatorHelper
         tokenDatabase = contracts.tokenDatabase
         allocationRewardToken = contracts.allocationRewardToken
+        whitelist = contracts.whitelist
 
         await dai.mint(deployer.address, parseEther(INITIAL_DAI_BALANCE))
     })
@@ -136,6 +139,10 @@ describe('TokenConverter', () => {
 
         beforeEach(async () => {
             [deployer, referrer1, referrer2, referrer3] = await hre.ethers.getSigners()
+
+            await whitelist.updateUserWhitelistStatus(referrer1.address, true)
+            await whitelist.updateUserWhitelistStatus(referrer2.address, true)
+            await whitelist.updateUserWhitelistStatus(referrer3.address, true)
 
             await createToken(tokenDatabase, MAX_SUPPLY)
             await allocateWithReferral(referrer1, percentage1)
