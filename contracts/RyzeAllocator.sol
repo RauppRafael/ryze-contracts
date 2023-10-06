@@ -43,9 +43,11 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
 
     uint16 public initialLiquidityBasisPoints; // 100 = 1%
     uint16 public referralRewardBasisPoints; // 100 = 1%
+    uint16 public referredUserBonus; // in allocation token
 
     mapping(uint => AllocationInfo) public allocationInfos;
     mapping(uint => uint) public disabledTokenValue;
+    mapping(address => bool) public hasAllocated;
 
     event TokenStateChanged(uint realEstateTokenId, AllocationState state);
 
@@ -64,7 +66,8 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         address _allocationToken,
         address _stablecoin,
         uint16 _initialLiquidityBasisPoints,
-        uint16 _referralRewardBasisPoints
+        uint16 _referralRewardBasisPoints,
+        uint16 _referredUserBonus
     ) public initializer {
         __WhitelistUser_init(_whitelist);
         __Ownable_init();
@@ -78,6 +81,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         stablecoin = IERC20MetadataUpgradeable(_stablecoin);
         initialLiquidityBasisPoints = _initialLiquidityBasisPoints;
         referralRewardBasisPoints = _referralRewardBasisPoints;
+        referredUserBonus = _referredUserBonus;
     }
 
     /**
@@ -236,19 +240,20 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
                 realAmount * (10 ** stablecoin.decimals())
             );
 
-        bool validReferrer = _referrer != address(0)
-            && _referrer != msg.sender
-            && RyzeWhitelist(whitelist).isWhitelisted(_referrer)
-            && !Address.isContract(_referrer);
+        _mintAllocation(_tokenId, realAmount, msg.sender, false);
 
-        _mintAllocation(
-            _tokenId,
-            realAmount,
-            msg.sender,
-            false
-        );
+        if (
+            _referrer != address(0) &&
+            _referrer != msg.sender &&
+            RyzeWhitelist(whitelist).isWhitelisted(_referrer) &&
+            !Address.isContract(_referrer)
+        ) {
+            if (!hasAllocated[msg.sender]) {
+                hasAllocated[msg.sender] = true;
 
-        if (validReferrer) {
+                _mintAllocation(_tokenId, referredUserBonus, msg.sender, true);
+            }
+
             _mintAllocation(
                 _tokenId,
                 realAmount * referralRewardBasisPoints / 10_000,

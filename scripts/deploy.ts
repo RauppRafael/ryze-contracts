@@ -59,6 +59,7 @@ const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
         stablecoin,
         initialLiquidityBasisPoints: 1_000, // 10%
         referralRewardBasisPoints: 150, // 1.5%
+        referredUserBonus: 10,
         vanity: true,
         confirmations: 5,
     })

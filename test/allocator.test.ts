@@ -29,6 +29,7 @@ const INITIAL_DAI_BALANCE = 100_000_000
 const MAX_SUPPLY = 1_000_000
 const INITIAL_LIQUIDITY_PERCENTAGE = 1
 const REFERRAL_REWARD_PERCENTAGE = 1
+const REFERRED_USER_BONUS = 10
 
 const initialLiquidityAllocation = MAX_SUPPLY * INITIAL_LIQUIDITY_PERCENTAGE / 100
 
@@ -428,7 +429,7 @@ describe('Allocator', () => {
             const initialDaiBalance = await dai.balanceOf(deployer.address)
             const expectedReferralAmount = amount * REFERRAL_REWARD_PERCENTAGE / 100
 
-            expect(await allocatorHelper.allocate(0, amount, { referrer: referrer.address }))
+            expect(await allocator.allocate(0, amount, referrer.address))
                 .to.emit(allocationToken, 'TransferSingle')
 
             expect(await dai.balanceOf(deployer.address))
@@ -441,13 +442,8 @@ describe('Allocator', () => {
         it('Mints referral rewards', async () => {
             const amount = MAX_SUPPLY / 10
 
-            for (let i = 0; i < 10; i++) {
-                await allocatorHelper.allocate(
-                    0,
-                    amount,
-                    { referrer: referrer.address },
-                )
-            }
+            for (let i = 0; i < 10; i++)
+                await allocator.allocate(0, amount, referrer.address)
 
             const expectedReferralAllocation = amount * 9 * REFERRAL_REWARD_PERCENTAGE / 100
 
@@ -458,10 +454,15 @@ describe('Allocator', () => {
 
             await allocator.claimStablecoins()
 
-            const daiClaimed = (await dai.balanceOf(deployer.address)).sub(initialOwnerBalance)
+            const daiClaimed = (await dai.balanceOf(deployer.address))
+                .sub(initialOwnerBalance)
+                .div(parseUnits(1, stablecoinDecimals))
+                .toNumber()
+            const bonuses = initialLiquidityAllocation +
+                expectedReferralAllocation +
+                REFERRED_USER_BONUS
 
-            expect(BigNumber.from(MAX_SUPPLY).sub(daiClaimed.div(parseUnits(1, stablecoinDecimals))))
-                .to.equal(initialLiquidityAllocation + expectedReferralAllocation)
+            expect(MAX_SUPPLY - daiClaimed).to.equal(bonuses)
 
             await liquidityInitializer.claimAndAddLiquidity(0, 10000)
 
