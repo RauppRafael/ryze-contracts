@@ -236,9 +236,19 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
                 realAmount * (10 ** stablecoin.decimals())
             );
 
-        _mintAllocation(_tokenId, realAmount, msg.sender, false);
+        bool validReferrer = _referrer != address(0)
+            && _referrer != msg.sender
+            && RyzeWhitelist(whitelist).isWhitelisted(_referrer)
+            && !Address.isContract(_referrer);
 
-        if (_referrer != address(0) && _referrer != msg.sender) {
+        _mintAllocation(
+            _tokenId,
+            realAmount,
+            msg.sender,
+            false
+        );
+
+        if (validReferrer) {
             _mintAllocation(
                 _tokenId,
                 realAmount * referralRewardBasisPoints / 10_000,
