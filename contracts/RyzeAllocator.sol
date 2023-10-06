@@ -45,11 +45,18 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     uint16 public referralRewardBasisPoints; // 100 = 1%
     uint16 public referredUserBonus; // in allocation token
 
+    uint16 public constant MAX_INITIAL_LIQUIDITY_PERCENTAGE = 15_000;
+    uint16 public constant MAX_REFERRAL_REWARD_PERCENTAGE = 1_000;
+    uint16 public constant MAX_REFERRED_USER_BONUS = 100;
+
     mapping(uint => AllocationInfo) public allocationInfos;
     mapping(uint => uint) public disabledTokenValue;
     mapping(address => bool) public hasAllocated;
 
     event TokenStateChanged(uint realEstateTokenId, AllocationState state);
+    event InitialLiquidityPercentageUpdated(uint16 percentage);
+    event ReferralRewardPercentageUpdated(uint16 percentage);
+    event ReferredUserBonusUpdated(uint16 bonus);
 
     error InvalidAllocationState(AllocationState expected, AllocationState current);
     error InvalidTokenId();
@@ -69,6 +76,13 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         uint16 _referralRewardBasisPoints,
         uint16 _referredUserBonus
     ) public initializer {
+        if (
+            (_initialLiquidityBasisPoints > MAX_INITIAL_LIQUIDITY_PERCENTAGE) ||
+            (_referralRewardBasisPoints > MAX_REFERRAL_REWARD_PERCENTAGE) ||
+            (_referredUserBonus > MAX_REFERRED_USER_BONUS)
+        )
+            revert InvalidAmount();
+
         __WhitelistUser_init(_whitelist);
         __Ownable_init();
         transferOwnership(_owner);
@@ -413,5 +427,38 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
      */
     receive() external payable {
         assert(msg.sender == address(router)); // only accept ETH via fallback from the WETH contract
+    }
+
+    function setInitialLiquidityBasisPoints(
+        uint16 _initialLiquidityBasisPoints
+    ) external onlyOwner {
+        if (_initialLiquidityBasisPoints > MAX_INITIAL_LIQUIDITY_PERCENTAGE)
+            revert InvalidAmount();
+
+        initialLiquidityBasisPoints = _initialLiquidityBasisPoints;
+
+        emit InitialLiquidityPercentageUpdated(_initialLiquidityBasisPoints);
+    }
+
+    function setReferralRewardBasisPoints(
+        uint16 _referralRewardBasisPoints
+    ) external onlyOwner {
+        if (_referralRewardBasisPoints > MAX_REFERRAL_REWARD_PERCENTAGE)
+            revert InvalidAmount();
+
+        referralRewardBasisPoints = _referralRewardBasisPoints;
+
+        emit ReferralRewardPercentageUpdated(_referralRewardBasisPoints);
+    }
+
+    function setReferredUserBonus(
+        uint16 _referredUserBonus
+    ) external onlyOwner {
+        if (_referredUserBonus > MAX_REFERRED_USER_BONUS)
+            revert InvalidAmount();
+
+        referredUserBonus = _referredUserBonus;
+
+        emit ReferredUserBonusUpdated(_referredUserBonus);
     }
 }
