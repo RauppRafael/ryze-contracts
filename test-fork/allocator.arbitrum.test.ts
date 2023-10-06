@@ -20,6 +20,9 @@ import chai, { expect } from 'chai'
 import hre, { waffle } from 'hardhat'
 import { Permit } from '../types/contracts/RyzeAllocator'
 
+if (process.env.HARDHAT_CHAIN !== 'ARBITRUM')
+    throw new Error('Fork test can only run on Arbitrum')
+
 chai.use(solidity)
 
 const INITIAL_DAI_BALANCE = 100_000_000
