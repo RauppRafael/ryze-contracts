@@ -1,6 +1,6 @@
 export enum AllocatorErrors {
     InvalidAllocationState = 'InvalidAllocationState',
-    InvalidTokenId = 'InvalidTokenId',
+    InvalidToken = 'InvalidToken',
     InvalidAmount = 'InvalidAmount',
     InsufficientBalance = 'InsufficientBalance',
     Unauthorized = 'Unauthorized',

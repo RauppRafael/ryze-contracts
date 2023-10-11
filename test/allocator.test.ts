@@ -113,10 +113,10 @@ describe('Allocator', () => {
 
     it('Can\'t allocate token before creation', async () => {
         await expect(allocator.allocate(0, 1000, hre.ethers.constants.AddressZero))
-            .to.be.revertedWith(AllocatorErrors.InvalidTokenId)
+            .to.be.revertedWith(AllocatorErrors.InvalidToken)
 
         await expect(allocator.allocate(1, 1000, hre.ethers.constants.AddressZero))
-            .to.be.revertedWith(AllocatorErrors.InvalidTokenId)
+            .to.be.revertedWith(AllocatorErrors.InvalidToken)
     })
 
     it('Creates NFT', async () => {

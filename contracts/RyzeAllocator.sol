@@ -59,7 +59,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     event ReferredUserBonusUpdated(uint16 bonus);
 
     error InvalidAllocationState(AllocationState expected, AllocationState current);
-    error InvalidTokenId();
+    error InvalidToken();
     error InvalidAmount();
     error InsufficientBalance();
 
@@ -82,6 +82,13 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
             (_referredUserBonus > MAX_REFERRED_USER_BONUS)
         )
             revert InvalidAmount();
+
+        if (
+            _allocationToken == _allocationRewardToken ||
+            _allocationToken == address(0) ||
+            _allocationRewardToken == address(0)
+        )
+            revert InvalidToken();
 
         __WhitelistUser_init(_whitelist);
         __Ownable_init();
@@ -231,7 +238,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         bool _collectPayment
     ) private {
         if (_tokenId >= tokenDatabase.tokenCount())
-            revert InvalidTokenId();
+            revert InvalidToken();
 
         AllocationInfo storage allocationInfo = allocationInfos[_tokenId];
         AllocationState allocationState = allocationInfo.allocationState;
