@@ -152,7 +152,9 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _amount The amount of NFTs to receive, not considering decimals.
      */
     function convertRealEstateFromErc20ToErc1155(uint _tokenId, uint _amount) public {
-        RyzeLiquidToken(_liquidTokenAddresses[_tokenId]).burn(msg.sender, _amount * 1e18);
+        RyzeLiquidToken liquidToken = RyzeLiquidToken(_liquidTokenAddresses[_tokenId]);
+
+        liquidToken.burn(msg.sender, _amount * (10 ** liquidToken.decimals()));
 
         realEstateToken.mint(msg.sender, _tokenId, _amount);
     }
@@ -218,7 +220,9 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
         if (_liquidTokenAddresses[_tokenId] == address(0))
             _createLiquidToken(_tokenId);
 
-        RyzeLiquidToken(_liquidTokenAddresses[_tokenId]).mint(msg.sender, _amount * 1e18);
+        RyzeLiquidToken liquidToken = RyzeLiquidToken(_liquidTokenAddresses[_tokenId]);
+
+        liquidToken.mint(msg.sender, _amount * (10 ** liquidToken.decimals()));
     }
 
     /**
