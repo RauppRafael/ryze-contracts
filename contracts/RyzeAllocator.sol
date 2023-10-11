@@ -200,8 +200,8 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         uint8 stablecoinDecimals = stablecoin.decimals();
         uint realAmount = _min(
             _minAmount,
-            _getAvailableAllocationAmount(_tokenId)
-        ) * (10 ** stablecoinDecimals);
+            _getAvailableAllocationAmount(_tokenId) * (10 ** stablecoinDecimals)
+        );
 
         if (realAmount < _minAmount) {
             router.swapETHForExactTokens{value: msg.value}(
