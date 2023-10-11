@@ -221,22 +221,22 @@ describe('TokenConverter', () => {
 
             await increaseTimeAndMakeChecks(
                 oneDay,
-                amount => Math.floor(amount / (30 * 6))
+                amount => Math.floor(amount / (30 * 6)),
             )
 
             await increaseTimeAndMakeChecks(
                 oneDay * 9,
-                amount => Math.floor(amount * 10 / (30 * 6))
+                amount => Math.floor(amount * 10 / (30 * 6)),
             )
 
             await increaseTimeAndMakeChecks(
                 oneDay * 60,
-                amount => Math.floor(amount * 70 / (30 * 6))
+                amount => Math.floor(amount * 70 / (30 * 6)),
             )
 
             await increaseTimeAndMakeChecks(
                 oneDay * 1_000,
-                amount => amount
+                amount => amount,
             )
         })
 
@@ -291,5 +291,21 @@ describe('TokenConverter', () => {
                 .to.equal(parseEther(amount1 + amount2))
             expect(await liquidToken.balanceOf(referrer2.address)).to.equal(0)
         })
+    })
+
+    describe('Convert many', () => {
+        const baseArray = new Array(10).fill(0).map((_, i) => i)
+
+        beforeEach(async () => {
+            await Promise.all(baseArray.map(async (_, i) => {
+                await createToken(tokenDatabase, MAX_SUPPLY)
+                await allocatorHelper.allocate(i, MAX_SUPPLY)
+                await liquidityInitializer.claimAndAddLiquidity(i, 10_000)
+            }))
+        })
+
+        it('to erc20', () => tokenConverter.convertManyAllocationsToRealEstateErc20(baseArray))
+
+        it('to erc1155', () => tokenConverter.convertManyAllocationsToRealEstate1155(baseArray))
     })
 })
