@@ -25,16 +25,27 @@ contract RyzeLiquidityInitializer is RyzeOwnableUpgradeable {
     IERC1155Upgradeable public allocationToken;
     IERC20Upgradeable public stablecoin;
 
+    error InvalidZeroAddress();
+
     function initialize(
-        address _owner,
+        address _gnosisSafe,
         address _router,
         address _allocator,
         address _tokenConverter,
         address _allocationToken,
         address _stablecoin
     ) public initializer {
+        if (
+            _router == address(0) ||
+            _allocator == address(0) ||
+            _tokenConverter == address(0) ||
+            _allocationToken == address(0) ||
+            _stablecoin == address(0)
+        )
+            revert InvalidZeroAddress();
+
         __Ownable_init();
-        transferOwnership(_owner);
+        transferOwnership(_gnosisSafe);
 
         allocator = RyzeAllocator(payable(_allocator));
         tokenConverter = RyzeTokenConverter(_tokenConverter);

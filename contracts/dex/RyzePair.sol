@@ -16,7 +16,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
     using UQ112x112 for uint224;
     using SafeERC20 for IERC20;
 
-    uint public constant override MINIMUM_LIQUIDITY = 10**3;
+    uint public constant override MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public immutable override factory;
     address public override token0;
@@ -46,7 +46,11 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1) external override {
-        require(msg.sender == factory, "FORBIDDEN"); // sufficient check
+        require(
+            msg.sender == factory && _token0 != address(0) && _token1 != address(0),
+            "FORBIDDEN"
+        );
+
         token0 = _token0;
         token1 = _token1;
     }
@@ -62,7 +66,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
             balance0 <= type(uint112).max && balance1 <= type(uint112).max,
             "OVERFLOW"
         );
-        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+        uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         unchecked {
             uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
             if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
@@ -100,7 +104,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
 
     // this low-level function should be called from a contract which performs important safety checks
     function mint(address to) external override nonReentrant returns (uint liquidity) {
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         uint balance0 = IERC20(token0).balanceOf(address(this));
         uint balance1 = IERC20(token1).balanceOf(address(this));
         uint amount0 = balance0 - _reserve0;
@@ -132,7 +136,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
         uint amount0,
         uint amount1
     ) {
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
         uint balance0 = IERC20(_token0).balanceOf(address(this));
@@ -169,7 +173,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
             amount0Out > 0 || amount1Out > 0,
             "INSUFFICIENT_OUTPUT_AMOUNT"
         );
-        (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         require(
             amount0Out < _reserve0 && amount1Out < _reserve1,
             "INSUFFICIENT_LIQUIDITY"

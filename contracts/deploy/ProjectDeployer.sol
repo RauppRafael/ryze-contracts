@@ -83,11 +83,10 @@ contract ProjectDeployer is Ownable {
         router = _deploy(_router.code, _router.salt);
 
         RyzeFactory(factory).initialize(_gnosisSafe);
-        RyzeRouter(payable(router)).initialize(_gnosisSafe, factory, _weth);
+        RyzeRouter(payable(router)).initialize(factory, _weth);
     }
 
     function deployTokens(
-        address _gnosisSafe,
         TokenDeploymentInfo calldata _tokenInfo
     ) external onlyOwner {
         tokenImplementation = _deploy(_tokenInfo.implementation.code, _tokenInfo.implementation.salt);
@@ -98,21 +97,18 @@ contract ProjectDeployer is Ownable {
 
         // Initialize tokens
         RyzeToken(allocationRewardToken).initialize(
-            _gnosisSafe,
             'Ryze Allocation Reward Token',
             'ryzeREWARD',
             'https://api.ryze.land/metadata/allocation-rewards/{id}.json'
         );
 
         RyzeToken(allocationToken).initialize(
-            _gnosisSafe,
             'Ryze Allocation Token',
             'ryzeALLOC',
             'https://api.ryze.land/metadata/allocations/{id}.json'
         );
 
         RyzeToken(realEstateToken).initialize(
-            _gnosisSafe,
             'Ryze Real Estate Token',
             'RYZE',
             'https://api.ryze.land/metadata/real-estate/{id}.json'

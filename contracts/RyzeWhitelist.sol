@@ -17,6 +17,7 @@ contract RyzeWhitelist is RyzeOwnableUpgradeable {
     event ManagerUpdated(address user);
 
     error Unauthorized();
+    error InvalidZeroAddress();
 
     /**
      * @notice Modifier to restrict function access only to the manager.
@@ -28,9 +29,12 @@ contract RyzeWhitelist is RyzeOwnableUpgradeable {
         _;
     }
 
-    function initialize(address _owner, address _manager) public initializer {
+    function initialize(address _gnosisSafe, address _manager) public initializer {
+        if (_manager == address(0))
+            revert InvalidZeroAddress();
+
         __Ownable_init();
-        transferOwnership(_owner);
+        transferOwnership(_gnosisSafe);
         manager = _manager;
     }
 

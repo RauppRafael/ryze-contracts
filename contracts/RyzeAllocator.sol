@@ -64,7 +64,7 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
     error InsufficientBalance();
 
     function initialize(
-        address _owner,
+        address _gnosisSafe,
         address _whitelist,
         address _router,
         address _tokenDatabase,
@@ -86,13 +86,21 @@ contract RyzeAllocator is RyzeOwnableUpgradeable, RyzeWhitelistUser {
         if (
             _allocationToken == _allocationRewardToken ||
             _allocationToken == address(0) ||
-            _allocationRewardToken == address(0)
+            _allocationRewardToken == address(0) ||
+            _stablecoin == address(0)
         )
             revert InvalidToken();
 
+        if (
+            _router == address(0) ||
+            _tokenDatabase == address(0) ||
+            _liquidityInitializer == address(0)
+        )
+            revert InvalidZeroAddress();
+
         __WhitelistUser_init(_whitelist);
         __Ownable_init();
-        transferOwnership(_owner);
+        transferOwnership(_gnosisSafe);
 
         router = RyzeRouter(payable(_router));
         tokenDatabase = RyzeTokenDatabase(_tokenDatabase);

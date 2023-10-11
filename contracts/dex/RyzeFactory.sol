@@ -16,9 +16,9 @@ contract RyzeFactory is IRyzeFactory, Ownable, Initializable {
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
 
-    function initialize(address _owner) external initializer {
-        feeTo = _owner;
-        transferOwnership(_owner);
+    function initialize(address _gnosisSafe) external initializer {
+        transferOwnership(_gnosisSafe);
+        feeTo = _gnosisSafe;
     }
 
     function allPairsLength() external view override returns (uint) {

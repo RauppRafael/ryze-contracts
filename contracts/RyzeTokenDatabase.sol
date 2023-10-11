@@ -50,9 +50,9 @@ contract RyzeTokenDatabase is RyzeOwnableUpgradeable {
      * @dev Initializes the contract with the address book.
      *
      */
-    function initialize(address _owner) public initializer {
+    function initialize(address _gnosisSafe) public initializer {
         __Ownable_init();
-        transferOwnership(_owner);
+        transferOwnership(_gnosisSafe);
     }
 
     /**

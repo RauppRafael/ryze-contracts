@@ -47,19 +47,28 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
     error TokenNotEnabled();
     error InsufficientBalance();
     error TooManyTokens();
+    error InvalidZeroAddress();
 
     // @dev Initialization function to set up initial contract state.
     function initialize(
-        address _owner,
+        address _gnosisSafe,
         address _tokenDatabase,
         address _allocator,
         address _allocationRewardToken,
         address _allocationToken,
         address _realEstateToken
     ) public initializer {
-        __Ownable_init();
+        if (
+            _tokenDatabase == address(0) ||
+            _allocator == address(0) ||
+            _allocationRewardToken == address(0) ||
+            _allocationToken == address(0) ||
+            _realEstateToken == address(0)
+        )
+            revert InvalidZeroAddress();
 
-        transferOwnership(_owner);
+        __Ownable_init();
+        transferOwnership(_gnosisSafe);
 
         tokenDatabase = RyzeTokenDatabase(_tokenDatabase);
         allocator = RyzeAllocator(payable(_allocator));

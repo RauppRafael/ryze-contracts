@@ -132,7 +132,6 @@ export const deployProject = async ({
     )).wait(confirmations)
 
     ;await (await projectDeployer.deployTokens(
-        gnosis,
         {
             allocationRewardTokenSalt,
             allocationTokenSalt,

@@ -38,16 +38,24 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
     mapping(uint => mapping(bool => uint)) public accumulatedRewardPerToken;
 
     function initialize(
-        address _owner,
+        address _gnosisSafe,
         address _whitelist,
         address _router,
         address _tokenConverter,
         address _realEstateToken,
         address _stablecoin
     ) public initializer {
+        if (
+            _router == address(0) ||
+            _tokenConverter == address(0) ||
+            _realEstateToken == address(0) ||
+            _stablecoin == address(0)
+        )
+            revert InvalidZeroAddress();
+
         __WhitelistUser_init(_whitelist);
         __Ownable_init();
-        transferOwnership(_owner);
+        transferOwnership(_gnosisSafe);
 
         router = RyzeRouter(payable(_router));
         tokenConverter = RyzeTokenConverter(_tokenConverter);

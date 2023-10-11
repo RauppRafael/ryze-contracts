@@ -10,9 +10,13 @@ abstract contract RyzeWhitelistUser is Initializable {
     address public whitelist;
 
     error Unauthorized();
+    error InvalidZeroAddress();
 
     // solhint-disable-next-line func-name-mixedcase
     function __WhitelistUser_init(address _whitelist) internal onlyInitializing {
+        if (_whitelist == address(0))
+            revert InvalidZeroAddress();
+
         whitelist = _whitelist;
     }
 

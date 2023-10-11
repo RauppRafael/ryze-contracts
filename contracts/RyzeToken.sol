@@ -20,9 +20,9 @@ contract RyzeToken is ERC1155BurnableUpgradeable, ERC2981Upgradeable, RyzeOwnabl
     address public tokenConverter;
 
     error Unauthorized();
+    error InvalidZeroAddress();
 
     function initialize(
-        address _gnosisSafe,
         string memory _name,
         string memory _symbol,
         string memory _metadataUri
@@ -30,18 +30,20 @@ contract RyzeToken is ERC1155BurnableUpgradeable, ERC2981Upgradeable, RyzeOwnabl
         __ERC1155_init(_metadataUri);
         __Ownable_init();
 
-        _setDefaultRoyalty(_gnosisSafe, 100);
-
         name = _name;
         symbol = _symbol;
     }
 
     function initialize2(
-        address _owner,
+        address _gnosisSafe,
         address _minter,
         address _tokenConverter
     ) public onlyOwner reinitializer(2) {
-        transferOwnership(_owner);
+        if (_minter == address(0) || _tokenConverter == address(0))
+            revert InvalidZeroAddress();
+
+        transferOwnership(_gnosisSafe);
+        _setDefaultRoyalty(_gnosisSafe, 100);
 
         minter = _minter;
         tokenConverter = _tokenConverter;

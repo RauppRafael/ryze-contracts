@@ -3,7 +3,6 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "./interfaces/IRyzeFactory.sol";
@@ -11,20 +10,24 @@ import "./interfaces/IRyzeRouter.sol";
 import "./interfaces/IWETH.sol";
 import "./libraries/RyzeLibrary.sol";
 
-contract RyzeRouter is IRyzeRouter, Initializable, Ownable {
+contract RyzeRouter is IRyzeRouter, Initializable {
     address public override factory;
     // solhint-disable-next-line var-name-mixedcase
     address public override WETH;
+
+    error InvalidZeroAddress();
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, "EXPIRED");
         _;
     }
 
-    function initialize(address _owner, address _factory, address _weth) external initializer {
+    function initialize(address _factory, address _weth) external initializer {
+        if (_factory == address(0) || _weth == address(0))
+            revert InvalidZeroAddress();
+
         factory = _factory;
         WETH = _weth;
-        transferOwnership(_owner);
     }
 
     receive() external payable {
