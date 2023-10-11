@@ -53,15 +53,15 @@ export class DexHelpers {
         )
     }
 
-    async removeLiquidity(token: Contract, amount: number) {
+    async removeLiquidity(token: Contract, amount: BigNumber) {
         const signer = await Hardhat.mainSigner()
 
-        await approveIfNeeded(await this.getPair(token), signer, this.router, Hardhat.parseEther(amount))
+        await approveIfNeeded(await this.getPair(token), signer, this.router, amount)
 
         await this.router.removeLiquidity(
             token.address,
             this.stablecoin.address,
-            Hardhat.parseEther(amount),
+            amount,
             0,
             0,
             signer.address,

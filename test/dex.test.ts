@@ -124,10 +124,10 @@ describe('Dex', () => {
     it('Should remove liquidity', async () => {
         const amountIn = Hardhat.parseEther(10)
         const amountOutMin = utils.parseUnits('9.9', stablecoinDecimals)
+        const daiMultiplier = await dai.decimals()
+        const pairMultiplier = (18 + daiMultiplier) / 2
 
         await addLiquidity(liquidToken, 1_000_000, 1_000_000)
-
-        const pair = await dexHelpers.getPair(liquidToken)
 
         await dexHelpers.swap(
             liquidToken,
@@ -136,12 +136,25 @@ describe('Dex', () => {
             amountOutMin,
         )
 
+        // Step 1: Check user's balances before removing liquidity
+        const initialLiquidTokenBalance = await liquidToken.balanceOf(deployer.address)
+        const initialDaiBalance = await dai.balanceOf(deployer.address)
+        const liquidityTokensToRemove = '100'
+
         await dexHelpers.removeLiquidity(
             liquidToken,
-            (await pair.balanceOf(deployer.address))
-                .div(Hardhat.parseEther(1))
-                .toNumber(),
+            utils.parseUnits(liquidityTokensToRemove, pairMultiplier),
         )
+
+        // Step 2: Check user's balances after removing liquidity
+        const finalLiquidTokenBalance = await liquidToken.balanceOf(deployer.address)
+        const finalDaiBalance = await dai.balanceOf(deployer.address)
+
+        // Step 3: Validate balance differences
+        expect(finalLiquidTokenBalance.sub(initialLiquidTokenBalance))
+            .to.almost(utils.parseUnits(liquidityTokensToRemove, 18), 0.001)
+        expect(finalDaiBalance.sub(initialDaiBalance))
+            .to.almost(utils.parseUnits(liquidityTokensToRemove, daiMultiplier), 0.001)
     })
 
     it('Should remove liquidity with permit', async () => {
