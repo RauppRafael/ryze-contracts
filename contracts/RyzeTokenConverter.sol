@@ -46,6 +46,7 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
 
     error TokenNotEnabled();
     error InsufficientBalance();
+    error TooManyTokens();
 
     // @dev Initialization function to set up initial contract state.
     function initialize(
@@ -101,7 +102,8 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _tokenIds An array of token IDs to claim.
      */
     function convertManyAllocationsToRealEstate1155(uint[] calldata _tokenIds) external {
-        require(_tokenIds.length < 100, "Too many tokens");
+        if (_tokenIds.length > 100)
+            revert TooManyTokens();
 
         for (uint index; index < _tokenIds.length; index++) {
             convertAllocationToRealEstateErc1155(_tokenIds[index]);
@@ -131,7 +133,8 @@ contract RyzeTokenConverter is ERC1155HolderUpgradeable, RyzeOwnableUpgradeable 
      * @param _tokenIds Array of token IDs to be claimed.
      */
     function convertManyAllocationsToRealEstateErc20(uint[] calldata _tokenIds) external {
-        require(_tokenIds.length < 100, "Too many tokens");
+        if (_tokenIds.length > 100)
+            revert TooManyTokens();
 
         for (uint index; index < _tokenIds.length; index++) {
             convertAllocationToRealEstateErc20(_tokenIds[index]);
