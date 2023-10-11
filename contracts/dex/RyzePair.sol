@@ -18,7 +18,7 @@ contract RyzePair is ERC20Permit, IRyzePair, ReentrancyGuard {
 
     uint public constant override MINIMUM_LIQUIDITY = 10**3;
 
-    address public override factory;
+    address public immutable override factory;
     address public override token0;
     address public override token1;
 

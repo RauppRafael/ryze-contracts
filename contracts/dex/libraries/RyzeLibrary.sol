@@ -24,7 +24,7 @@ library RyzeLibrary {
                             hex'ff',
                             factory,
                             keccak256(abi.encodePacked(token0, token1)),
-                            hex'cfc5519db0402328bc95e529a1e30a4c5b8bc87e7020a5934e9d2f6617b6ca4f' // init code hash
+                            hex'ac9073009862768757119a471a10fcbba4a4e2f3529c15330617888e32fa9f4e' // init code hash
                         )
                     )
                 )
