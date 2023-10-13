@@ -1,10 +1,11 @@
+import { time } from '@nomicfoundation/hardhat-network-helpers'
 import { AllocatorHelper } from './helpers/AllocatorHelper'
 import { DexHelpers } from './helpers/DexHelpers'
 import { Hardhat } from 'hardhat-vanity'
 import { Permit } from '@ryze-blockchain/shared'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { TestContractDeployer } from './helpers/TestContractDeployer'
-import { constants, utils } from 'ethers'
+import { BigNumber, constants, utils } from 'ethers'
 import { createToken } from './helpers/create-token'
 import { getLiquidToken } from './helpers/get-liquid-token'
 import { solidity } from 'ethereum-waffle'
@@ -55,7 +56,8 @@ describe('Staking', () => {
         pair: RyzePair,
         whitelist: RyzeWhitelist,
         stableDecimals: number,
-        pairMultiplier: number
+        pairMultiplier: number,
+        rewardMaturationTime: BigNumber
 
     function parseUnits(value: number, decimals: number) {
         return utils.parseUnits(value.toString(), decimals)
@@ -83,6 +85,7 @@ describe('Staking', () => {
         })
 
         await staking.distribute(0, Hardhat.parseEther(100))
+        await time.increase(rewardMaturationTime)
 
         await forAllTesters(async tester => {
             const address = tester.signer.address
@@ -122,6 +125,7 @@ describe('Staking', () => {
         whitelist = contracts.whitelist
         stableDecimals = await dai.decimals()
         pairMultiplier = (18 + stableDecimals) / 2
+        rewardMaturationTime = await staking.REWARD_MATURATION_TIME()
 
         await dai.mint(deployer.address, Hardhat.parseEther(MAX_SUPPLY + 1_000_000))
         await dai.approve(staking.address, constants.MaxUint256)
@@ -222,6 +226,7 @@ describe('Staking', () => {
             expect(await dai.balanceOf(derp.address)).to.equal(0)
 
             await staking.connect(derp).stakeERC20(0, false, Hardhat.parseEther(10))
+            await time.increase(rewardMaturationTime)
             await staking.connect(derp).claimRewards(0, false)
             await forAllTesters(tester => staking.connect(tester.signer).claimRewards(0, false))
             await staking.connect(derp).claimRewards(0, false)
@@ -254,20 +259,81 @@ describe('Staking', () => {
                 })
             })
 
-            it('Unstakes with rewards', async () => {
-                await staking.distribute(0, Hardhat.parseEther(100))
+            describe('Unstakes with rewards', () => {
+                it('Without passing time', async () => {
+                    await staking.distribute(0, Hardhat.parseEther(100))
 
-                await forAllTesters(async tester => {
-                    const address = tester.signer.address
-                    const amount = Hardhat.parseEther(tester.percentage)
+                    await forAllTesters(async tester => {
+                        const address = tester.signer.address
+                        const amount = Hardhat.parseEther(tester.percentage)
 
-                    expect(await dai.balanceOf(address)).to.equal(0)
-                    expect(await liquidToken.balanceOf(address)).to.equal(0)
+                        expect(await dai.balanceOf(address)).to.equal(0)
+                        expect(await liquidToken.balanceOf(address)).to.equal(0)
 
-                    await staking.connect(tester.signer).unstake(0, false, amount)
+                        await staking.connect(tester.signer).unstake(0, false, amount)
 
-                    expect(await dai.balanceOf(address)).to.equal(amount)
-                    expect(await liquidToken.balanceOf(address)).to.equal(amount)
+                        expect(await dai.balanceOf(address)).to.equal(0)
+                        expect(await liquidToken.balanceOf(address)).to.equal(amount)
+                    })
+                })
+
+                it('Redistributes forfeited rewards', async () => {
+                    await liquidToken.connect(deployer).approve(staking.address, constants.MaxUint256)
+                    await staking.connect(deployer).stakeERC20(0, false, Hardhat.parseEther('10'))
+
+                    const distributedAmount = Hardhat.parseEther(100)
+
+                    await staking.distribute(0, distributedAmount)
+
+                    // burn remaining dai
+                    await dai.transfer(liquidToken.address, await dai.balanceOf(deployer.address))
+
+                    await forAllTesters(async tester => {
+                        const address = tester.signer.address
+                        const amount = Hardhat.parseEther(tester.percentage)
+
+                        expect(await dai.balanceOf(address)).to.equal(0)
+                        expect(await liquidToken.balanceOf(address)).to.equal(0)
+
+                        await staking.connect(tester.signer).unstake(0, false, amount)
+
+                        expect(await dai.balanceOf(address)).to.equal(0)
+                        expect(await liquidToken.balanceOf(address)).to.equal(amount)
+                    })
+
+                    // remaining staker recieves all rewards
+                    expect(await dai.balanceOf(deployer.address))
+                        .to.equal(0)
+                    expect((await staking.userInfo(0, false, deployer.address)).pendingRewards_)
+                        .to.almost(distributedAmount, 0.00001)
+
+                    await time.increase(rewardMaturationTime)
+
+                    await staking.connect(deployer).unstake(0, false, Hardhat.parseEther('10'))
+
+                    expect((await staking.userInfo(0, false, deployer.address)).pendingRewards_)
+                        .to.equal(0)
+                    expect(await dai.balanceOf(deployer.address))
+                        .to.almost(distributedAmount, 0.00001)
+                })
+
+                it('Passing time', async () => {
+                    await staking.distribute(0, Hardhat.parseEther(100))
+
+                    await time.increase(rewardMaturationTime)
+
+                    await forAllTesters(async tester => {
+                        const address = tester.signer.address
+                        const amount = Hardhat.parseEther(tester.percentage)
+
+                        expect(await dai.balanceOf(address)).to.equal(0)
+                        expect(await liquidToken.balanceOf(address)).to.equal(0)
+
+                        await staking.connect(tester.signer).unstake(0, false, amount)
+
+                        expect(await dai.balanceOf(address)).to.equal(amount)
+                        expect(await liquidToken.balanceOf(address)).to.equal(amount)
+                    })
                 })
             })
 
@@ -314,6 +380,7 @@ describe('Staking', () => {
             expect(await dai.balanceOf(derp.address)).to.equal(0)
 
             await staking.connect(derp).stakeERC20(0, true, parseUnits(10, pairMultiplier))
+            await time.increase(rewardMaturationTime)
             await staking.connect(derp).claimRewards(0, true)
             await forAllTesters(tester => staking.connect(tester.signer).claimRewards(0, true))
             await staking.connect(derp).claimRewards(0, true)
@@ -354,6 +421,7 @@ describe('Staking', () => {
         })
 
         await staking.distribute(0, Hardhat.parseEther(200))
+        await time.increase(rewardMaturationTime)
 
         await forAllTesters(async tester => {
             const amount = Hardhat.parseEther(tester.percentage)

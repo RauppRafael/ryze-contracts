@@ -25,12 +25,16 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
     struct UserInfo {
         uint stake;
         uint rewardDebt;
+        uint lastDepositTimestamp;
     }
 
     RyzeRouter public router;
     RyzeTokenConverter public tokenConverter;
     IERC1155Upgradeable public realEstateToken;
     IERC20MetadataUpgradeable public stablecoin;
+    uint public constant REWARD_MATURATION_TIME = 5 days;
+
+    error RewardsNotMatured();
 
     // @dev mapping tokenId => staked token isPair => user address => user staking info
     mapping(uint => mapping(bool => mapping(address => UserInfo))) private _userInfos;
@@ -70,7 +74,7 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
      * @param _amount Amount of ERC1155 tokens to be converted and staked.
      */
     function stakeERC1155(uint _tokenId, uint _amount) external onlyWhitelisted {
-        claimRewards(_tokenId, false);
+        _claimRewards(_tokenId, false);
 
         realEstateToken.safeTransferFrom(
             msg.sender,
@@ -110,7 +114,7 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
      * @param _amount Amount of tokens to stake.
      */
     function stakeERC20(uint _tokenId, bool _isPair, uint _amount) public onlyWhitelisted {
-        claimRewards(_tokenId, _isPair);
+        _claimRewards(_tokenId, _isPair);
 
         IERC20MetadataUpgradeable(
             _getStakingToken(_tokenId, _isPair)
@@ -133,7 +137,8 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         UserInfo storage user = _userInfos[_tokenId][_isPair][msg.sender];
 
         user.stake += _amount;
-        user.rewardDebt = _calculateRewardDebt(_tokenId, _isPair, user.stake);
+        user.rewardDebt = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
+        user.lastDepositTimestamp = block.timestamp;
     }
 
     /**
@@ -143,31 +148,51 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
      * @param _desiredAmount Amount of tokens to unstake.
      */
     function unstake(uint _tokenId, bool _isPair, uint _desiredAmount) external {
-        claimRewards(_tokenId, _isPair);
-
         UserInfo storage user = _userInfos[_tokenId][_isPair][msg.sender];
-
         uint amount = _desiredAmount < user.stake ? _desiredAmount : user.stake;
+        uint redistributeAmount;
+
+        if (amount > 0 && !_isDepositMatured(user.lastDepositTimestamp)) {
+            uint accumulatedRewards = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
+            redistributeAmount = accumulatedRewards - user.rewardDebt;
+
+            user.rewardDebt = accumulatedRewards;
+        }
+        else {
+            _claimRewards(_tokenId, _isPair);
+        }
 
         user.stake -= amount;
-        user.rewardDebt = _calculateRewardDebt(_tokenId, _isPair, user.stake);
+        user.rewardDebt = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
 
         IERC20MetadataUpgradeable(_getStakingToken(_tokenId, _isPair)).safeTransfer(msg.sender, amount);
+
+        if (redistributeAmount > 0)
+            _distribute(_tokenId, redistributeAmount);
     }
 
     /**
      * @notice Claims pending rewards.
-     * @param _tokenId ID of the token/allocation.
+     * @param _tokenId ID of the token.
      * @param _isPair If the staking token is a pair or single token.
      */
-    function claimRewards(uint _tokenId, bool _isPair) public {
+    function claimRewards(uint _tokenId, bool _isPair) external {
+        uint lastDepositTimestamp = _userInfos[_tokenId][_isPair][msg.sender].lastDepositTimestamp;
+
+        if (!_isDepositMatured(lastDepositTimestamp))
+            revert RewardsNotMatured();
+
+        _claimRewards(_tokenId, _isPair);
+    }
+
+    function _claimRewards(uint _tokenId, bool _isPair) internal {
         UserInfo storage user = _userInfos[_tokenId][_isPair][msg.sender];
 
-        if (user.stake > 0) {
-            uint rewardsPerStakedToken = _calculateRewardDebt(_tokenId, _isPair, user.stake);
-            uint pending = rewardsPerStakedToken - user.rewardDebt;
+        if (user.stake > 0 && _isDepositMatured(user.lastDepositTimestamp)) {
+            uint accumulatedRewards = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
+            uint pending = accumulatedRewards - user.rewardDebt;
 
-            user.rewardDebt = rewardsPerStakedToken;
+            user.rewardDebt = accumulatedRewards;
 
             if (pending > 0)
                 stablecoin.safeTransfer(msg.sender, pending);
@@ -182,25 +207,50 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
     function distribute(uint _tokenId, uint _amount) external {
         stablecoin.safeTransferFrom(msg.sender, address(this), _amount);
 
+        _distribute(_tokenId, _amount);
+    }
+
+    function _distribute(uint _tokenId, uint _amount) internal {
+        (
+            uint pairBalance,
+            uint pairUnderlyingBalance,
+            uint liquidTokenBalance,
+            uint totalRealEstateBalance
+        ) = _getStakedBalances(_tokenId);
+
+        if (totalRealEstateBalance > 0) {
+            uint8 stableDecimals = stablecoin.decimals();
+            uint parsedAmount = _changeBase(stableDecimals, 18, _amount);
+            uint rewardsToLiquid = parsedAmount * liquidTokenBalance / totalRealEstateBalance;
+            uint rewardsToPair = parsedAmount * pairUnderlyingBalance / totalRealEstateBalance;
+
+            accumulatedRewardPerToken[_tokenId][false] += liquidTokenBalance > 0
+                ? _changeBase(18, stableDecimals, rewardsToLiquid * 1e18 / liquidTokenBalance)
+                : 0;
+            accumulatedRewardPerToken[_tokenId][true] += pairBalance > 0
+                ? _changeBase(18, stableDecimals, rewardsToPair * 1e18 / pairBalance)
+                : 0;
+        } else {
+            // In case no tokens are staked, the value is returned to the treasury
+            IERC20MetadataUpgradeable(stablecoin).safeTransfer(owner(), _amount);
+        }
+    }
+
+    function _getStakedBalances(
+        uint _tokenId
+    ) internal view returns (
+        uint pairBalance,
+        uint pairUnderlyingBalance,
+        uint liquidTokenBalance,
+        uint totalRealEstateBalance
+    ) {
         address liquidToken = tokenConverter.getLiquidToken(_tokenId);
         address pair = _getPair(_tokenId);
 
-        uint8 stableDecimals = stablecoin.decimals();
-        uint parsedAmount = changeBase(stableDecimals, 18, _amount);
-        uint liquidTokenBalance = _balance(liquidToken);
-        uint pairBalance = _balance(pair);
-        uint pairUnderlyingBalance = pairBalance * _getRealEstateReserves(pair) / IERC20MetadataUpgradeable(pair).totalSupply();
-        uint totalRealEstateBalance = liquidTokenBalance + pairUnderlyingBalance;
-
-        uint rewardsToLiquid = parsedAmount * liquidTokenBalance / totalRealEstateBalance;
-        uint rewardsToPair = parsedAmount * pairUnderlyingBalance / totalRealEstateBalance;
-
-        accumulatedRewardPerToken[_tokenId][false] += liquidTokenBalance > 0
-            ? changeBase(18, stableDecimals, rewardsToLiquid * 1e18 / liquidTokenBalance)
-            : 0;
-        accumulatedRewardPerToken[_tokenId][true] += pairBalance > 0
-            ? changeBase(18, stableDecimals, rewardsToPair * 1e18 / pairBalance)
-            : 0;
+        pairBalance = _balance(pair);
+        pairUnderlyingBalance = pairBalance * _getRealEstateReserves(pair) / IERC20MetadataUpgradeable(pair).totalSupply();
+        liquidTokenBalance = _balance(liquidToken);
+        totalRealEstateBalance = liquidTokenBalance + pairUnderlyingBalance;
     }
 
     /**
@@ -217,12 +267,13 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         address _user
     ) external view returns (
         uint stake_,
-        uint pendingRewards_
+        uint pendingRewards_,
+        uint lastDepositTimestamp_
     ) {
         UserInfo memory user = _userInfos[_tokenId][_isPair][_user];
-        uint rewardsPerStakedToken = _calculateRewardDebt(_tokenId, _isPair, user.stake);
+        uint totalUserRewards = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
 
-        return (user.stake, rewardsPerStakedToken - user.rewardDebt);
+        return (user.stake, totalUserRewards - user.rewardDebt, user.lastDepositTimestamp);
     }
 
     function _balance(address _token) internal view returns (uint) {
@@ -249,14 +300,22 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         return token0 == address(stablecoin) ? _reserve1 : _reserve0;
     }
 
-    function _calculateRewardDebt(uint _tokenId, bool _isPair, uint _userStake) internal view returns (uint) {
+    function _calculateAccumulatedRewards(
+        uint _tokenId,
+        bool _isPair,
+        uint _userStake
+    ) internal view returns (uint) {
         uint8 stableDecimals = stablecoin.decimals();
-        uint parsedStake = changeBase(18, stableDecimals, _userStake);
+        uint parsedStake = _changeBase(18, stableDecimals, _userStake);
 
         return parsedStake * accumulatedRewardPerToken[_tokenId][_isPair] / (10 ** stableDecimals);
     }
 
-    function changeBase(uint8 _from, uint8 _to, uint _amount) public pure returns (uint256 value_) {
+    function _isDepositMatured(uint _depositTimestamp) internal view returns (bool) {
+        return (_depositTimestamp + REWARD_MATURATION_TIME) <= block.timestamp;
+    }
+
+    function _changeBase(uint8 _from, uint8 _to, uint _amount) internal pure returns (uint256 value_) {
         return (_amount * 10 ** _to) / (10 ** _from);
     }
 }
