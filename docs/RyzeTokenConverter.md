@@ -75,10 +75,22 @@ error TokenNotEnabled()
 error InsufficientBalance()
 ```
 
+### TooManyTokens
+
+```solidity
+error TooManyTokens()
+```
+
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _tokenDatabase, address _allocator, address _allocationRewardToken, address _allocationToken, address _realEstateToken) public
+function initialize(address _gnosisSafe, address _tokenDatabase, address _allocator, address _allocationRewardToken, address _allocationToken, address _realEstateToken) public
 ```
 
 ### getLiquidToken

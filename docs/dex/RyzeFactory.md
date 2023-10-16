@@ -29,7 +29,7 @@ address[] allPairs
 ### initialize
 
 ```solidity
-function initialize(address _owner) external
+function initialize(address _gnosisSafe) external
 ```
 
 ### allPairsLength

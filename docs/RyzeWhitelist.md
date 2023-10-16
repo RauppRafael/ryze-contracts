@@ -30,6 +30,12 @@ event ManagerUpdated(address user)
 error Unauthorized()
 ```
 
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### onlyManager
 
 ```solidity
@@ -41,7 +47,7 @@ Modifier to restrict function access only to the manager.
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _manager) public
+function initialize(address _gnosisSafe, address _manager) public
 ```
 
 ### isWhitelisted

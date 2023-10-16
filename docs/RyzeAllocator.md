@@ -74,6 +74,30 @@ uint16 initialLiquidityBasisPoints
 uint16 referralRewardBasisPoints
 ```
 
+### referredUserBonus
+
+```solidity
+uint16 referredUserBonus
+```
+
+### MAX_INITIAL_LIQUIDITY_PERCENTAGE
+
+```solidity
+uint16 MAX_INITIAL_LIQUIDITY_PERCENTAGE
+```
+
+### MAX_REFERRAL_REWARD_PERCENTAGE
+
+```solidity
+uint16 MAX_REFERRAL_REWARD_PERCENTAGE
+```
+
+### MAX_REFERRED_USER_BONUS
+
+```solidity
+uint16 MAX_REFERRED_USER_BONUS
+```
+
 ### allocationInfos
 
 ```solidity
@@ -86,10 +110,34 @@ mapping(uint256 => struct RyzeAllocator.AllocationInfo) allocationInfos
 mapping(uint256 => uint256) disabledTokenValue
 ```
 
+### hasAllocated
+
+```solidity
+mapping(address => bool) hasAllocated
+```
+
 ### TokenStateChanged
 
 ```solidity
 event TokenStateChanged(uint256 realEstateTokenId, enum RyzeAllocator.AllocationState state)
+```
+
+### InitialLiquidityPercentageUpdated
+
+```solidity
+event InitialLiquidityPercentageUpdated(uint16 percentage)
+```
+
+### ReferralRewardPercentageUpdated
+
+```solidity
+event ReferralRewardPercentageUpdated(uint16 percentage)
+```
+
+### ReferredUserBonusUpdated
+
+```solidity
+event ReferredUserBonusUpdated(uint16 bonus)
 ```
 
 ### InvalidAllocationState
@@ -98,10 +146,10 @@ event TokenStateChanged(uint256 realEstateTokenId, enum RyzeAllocator.Allocation
 error InvalidAllocationState(enum RyzeAllocator.AllocationState expected, enum RyzeAllocator.AllocationState current)
 ```
 
-### InvalidTokenId
+### InvalidToken
 
 ```solidity
-error InvalidTokenId()
+error InvalidToken()
 ```
 
 ### InvalidAmount
@@ -119,7 +167,7 @@ error InsufficientBalance()
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _whitelist, address _router, address _tokenDatabase, address _liquidityInitializer, address _allocationRewardToken, address _allocationToken, address _stablecoin, uint16 _initialLiquidityBasisPoints, uint16 _referralRewardBasisPoints) public
+function initialize(address _gnosisSafe, address _whitelist, address _router, address _tokenDatabase, address _liquidityInitializer, address _allocationRewardToken, address _allocationToken, address _stablecoin, uint16 _initialLiquidityBasisPoints, uint16 _referralRewardBasisPoints, uint16 _referredUserBonus) public
 ```
 
 ### _initializeAllocation
@@ -323,4 +371,22 @@ receive() external payable
 ```
 
 Fallback function to accept Ether payments. Ensures only transactions from the router are accepted.
+
+### setInitialLiquidityBasisPoints
+
+```solidity
+function setInitialLiquidityBasisPoints(uint16 _initialLiquidityBasisPoints) external
+```
+
+### setReferralRewardBasisPoints
+
+```solidity
+function setReferralRewardBasisPoints(uint16 _referralRewardBasisPoints) external
+```
+
+### setReferredUserBonus
+
+```solidity
+function setReferredUserBonus(uint16 _referredUserBonus) external
+```
 

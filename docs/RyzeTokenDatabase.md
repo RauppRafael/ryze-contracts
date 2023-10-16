@@ -55,7 +55,7 @@ _Event that is emitted when an NFT token is registered._
 ### initialize
 
 ```solidity
-function initialize(address _owner) public
+function initialize(address _gnosisSafe) public
 ```
 
 _Initializes the contract with the address book._

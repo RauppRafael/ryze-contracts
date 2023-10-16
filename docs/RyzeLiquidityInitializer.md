@@ -36,10 +36,16 @@ contract IERC1155Upgradeable allocationToken
 contract IERC20Upgradeable stablecoin
 ```
 
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _router, address _allocator, address _tokenConverter, address _allocationToken, address _stablecoin) public
+function initialize(address _gnosisSafe, address _router, address _allocator, address _tokenConverter, address _allocationToken, address _stablecoin) public
 ```
 
 ### allocation

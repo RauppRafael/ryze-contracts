@@ -14,6 +14,12 @@ address factory
 address WETH
 ```
 
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### ensure
 
 ```solidity
@@ -23,7 +29,7 @@ modifier ensure(uint256 deadline)
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _factory, address _weth) external
+function initialize(address _factory, address _weth) external
 ```
 
 ### receive

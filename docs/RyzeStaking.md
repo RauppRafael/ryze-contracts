@@ -12,6 +12,7 @@ _Interacts with multiple components: RyzeRouter, RyzeTokenConverter, and RyzePai
 struct UserInfo {
   uint256 stake;
   uint256 rewardDebt;
+  uint256 lastDepositTimestamp;
 }
 ```
 
@@ -39,6 +40,18 @@ contract IERC1155Upgradeable realEstateToken
 contract IERC20MetadataUpgradeable stablecoin
 ```
 
+### REWARD_MATURATION_TIME
+
+```solidity
+uint256 REWARD_MATURATION_TIME
+```
+
+### RewardsNotMatured
+
+```solidity
+error RewardsNotMatured()
+```
+
 ### accumulatedRewardPerToken
 
 ```solidity
@@ -48,7 +61,7 @@ mapping(uint256 => mapping(bool => uint256)) accumulatedRewardPerToken
 ### initialize
 
 ```solidity
-function initialize(address _owner, address _whitelist, address _router, address _tokenConverter, address _realEstateToken, address _stablecoin) public
+function initialize(address _gnosisSafe, address _whitelist, address _router, address _tokenConverter, address _realEstateToken, address _stablecoin) public
 ```
 
 ### stakeERC1155
@@ -136,7 +149,7 @@ Unstakes a liquid token or a pair.
 ### claimRewards
 
 ```solidity
-function claimRewards(uint256 _tokenId, bool _isPair) public
+function claimRewards(uint256 _tokenId, bool _isPair) external
 ```
 
 Claims pending rewards.
@@ -145,8 +158,14 @@ Claims pending rewards.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _tokenId | uint256 | ID of the token/allocation. |
+| _tokenId | uint256 | ID of the token. |
 | _isPair | bool | If the staking token is a pair or single token. |
+
+### _claimRewards
+
+```solidity
+function _claimRewards(uint256 _tokenId, bool _isPair) internal
+```
 
 ### distribute
 
@@ -163,10 +182,22 @@ Distributes the rewards for a given token.
 | _tokenId | uint256 | ID of the token/allocation. |
 | _amount | uint256 | Amount of stablecoins to distribute. |
 
+### _distribute
+
+```solidity
+function _distribute(uint256 _tokenId, uint256 _amount) internal
+```
+
+### _getStakedBalances
+
+```solidity
+function _getStakedBalances(uint256 _tokenId) internal view returns (uint256 pairBalance, uint256 pairUnderlyingBalance, uint256 liquidTokenBalance, uint256 totalRealEstateBalance)
+```
+
 ### userInfo
 
 ```solidity
-function userInfo(uint256 _tokenId, bool _isPair, address _user) external view returns (uint256 stake_, uint256 pendingRewards_)
+function userInfo(uint256 _tokenId, bool _isPair, address _user) external view returns (uint256 stake_, uint256 pendingRewards_, uint256 lastDepositTimestamp_)
 ```
 
 Provides staking details of a user.
@@ -185,6 +216,7 @@ Provides staking details of a user.
 | ---- | ---- | ----------- |
 | stake_ | uint256 | Amount of tokens staked by the user. |
 | pendingRewards_ | uint256 | Pending rewards for the user. |
+| lastDepositTimestamp_ | uint256 |  |
 
 ### _balance
 
@@ -210,15 +242,21 @@ function _getPair(uint256 _tokenId) internal view returns (address)
 function _getRealEstateReserves(address _pair) internal view returns (uint112)
 ```
 
-### _calculateRewardDebt
+### _calculateAccumulatedRewards
 
 ```solidity
-function _calculateRewardDebt(uint256 _tokenId, bool _isPair, uint256 _userStake) internal view returns (uint256)
+function _calculateAccumulatedRewards(uint256 _tokenId, bool _isPair, uint256 _userStake) internal view returns (uint256)
 ```
 
-### changeBase
+### _isDepositMatured
 
 ```solidity
-function changeBase(uint8 _from, uint8 _to, uint256 _amount) public pure returns (uint256 value_)
+function _isDepositMatured(uint256 _depositTimestamp) internal view returns (bool)
+```
+
+### _changeBase
+
+```solidity
+function _changeBase(uint8 _from, uint8 _to, uint256 _amount) internal pure returns (uint256 value_)
 ```
 

@@ -14,6 +14,12 @@ address whitelist
 error Unauthorized()
 ```
 
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### __WhitelistUser_init
 
 ```solidity

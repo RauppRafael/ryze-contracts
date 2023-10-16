@@ -32,16 +32,22 @@ address tokenConverter
 error Unauthorized()
 ```
 
+### InvalidZeroAddress
+
+```solidity
+error InvalidZeroAddress()
+```
+
 ### initialize
 
 ```solidity
-function initialize(address _gnosisSafe, string _name, string _symbol, string _metadataUri) public
+function initialize(string _name, string _symbol, string _metadataUri) public
 ```
 
 ### initialize2
 
 ```solidity
-function initialize2(address _owner, address _minter, address _tokenConverter) public
+function initialize2(address _gnosisSafe, address _minter, address _tokenConverter) public
 ```
 
 ### isApprovedForAll
