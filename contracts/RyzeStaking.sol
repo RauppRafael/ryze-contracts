@@ -143,6 +143,7 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
 
     /**
      * @notice Unstakes a liquid token or a pair.
+     * If unstaked before matured, the rewards are redistributed across the pool.
      * @param _tokenId ID of the token/allocation.
      * @param _isPair If the staking token is a pair or single token.
      * @param _desiredAmount Amount of tokens to unstake.
@@ -155,8 +156,6 @@ contract RyzeStaking is RyzeOwnableUpgradeable, RyzeWhitelistUser, ERC1155Holder
         if (amount > 0 && !_isDepositMatured(user.lastDepositTimestamp)) {
             uint accumulatedRewards = _calculateAccumulatedRewards(_tokenId, _isPair, user.stake);
             redistributeAmount = accumulatedRewards - user.rewardDebt;
-
-            user.rewardDebt = accumulatedRewards;
         }
         else {
             _claimRewards(_tokenId, _isPair);

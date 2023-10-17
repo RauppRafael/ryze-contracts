@@ -137,6 +137,7 @@ function unstake(uint256 _tokenId, bool _isPair, uint256 _desiredAmount) externa
 ```
 
 Unstakes a liquid token or a pair.
+If unstaked before matured, the rewards are redistributed across the pool.
 
 #### Parameters
 
