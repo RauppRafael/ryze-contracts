@@ -31,7 +31,6 @@ async function getOwner(name: string) {
 
     await Promise.all([
         'RyzeFactory',
-        'RyzeRouter',
 
         'RyzeAllocationRewardToken',
         'RyzeAllocationToken',
