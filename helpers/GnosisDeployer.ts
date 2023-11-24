@@ -15,7 +15,7 @@ export class GnosisDeployer {
         threshold: number,
         signer: SignerWithAddress,
     ): Promise<GnosisSafe> {
-        const factory = await GnosisSafeProxyFactory__factory.connect(
+        const factory = GnosisSafeProxyFactory__factory.connect(
             FACTORY_ADDRESS,
             signer,
         )

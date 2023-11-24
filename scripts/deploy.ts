@@ -1,18 +1,15 @@
-import { GnosisDeployer } from '../helpers/GnosisDeployer'
 import { deployProject } from '../helpers/deploy-project'
 import hre from 'hardhat'
-import { isContract } from '../helpers/is-contract'
 import { Dai__factory, WrappedEther__factory } from '../types'
 import { Hardhat, Storage, StorageType } from 'hardhat-vanity'
 
-// TODO update weth and dai addresses
-const WETH_ADDR = '0x1d308089a2d1ced3f1ce36b1fcaf815b07217be3'
-const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
+const WETH_ADDR = '0x82af49447d8a07e3bd95bd0d56f35241523fbab1'
+const STABLECOIN_ADDR = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'
+const GNOSIS_SAFE_ADDR = '0xcD6E9Cba3851F2859304Ae85b2b62fa344758c1D'
 
 ;(async () => {
     const signer = await Hardhat.mainSigner()
-    const owner = process.env.OWNER_ADDRESS // TODO update owner address
-    const whitelistManager = process.env.WHITELIST_MANAGER // TODO update manager address
+    const whitelistManager = process.env.WHITELIST_MANAGER
     const weth = WrappedEther__factory.connect(WETH_ADDR, hre.ethers.provider)
     const stablecoin = Dai__factory.connect(STABLECOIN_ADDR, hre.ethers.provider)
 
@@ -22,21 +19,13 @@ const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
     if (nonce !== 0)
         throw new Error('Signer not virgin')
 
-    if (!owner)
-        throw new Error('Missing OWNER_ADDRESS env')
-
     if (!whitelistManager)
         throw new Error('Missing WHITELIST_MANAGER env')
 
     if (!salt)
         throw new Error('Missing STARTS_WITH env')
 
-    const gnosisSalt = `0x${ salt.repeat(5) }`
-
-    const gnosisSafeAddress = await GnosisDeployer
-        .calculateGnosisProxyAddress(gnosisSalt, [owner], 1)
-
-    await Storage.save({ type: StorageType.ADDRESS, name: 'GnosisSafe', value: gnosisSafeAddress })
+    await Storage.save({ type: StorageType.ADDRESS, name: 'GnosisSafe', value: GNOSIS_SAFE_ADDR })
     await Storage.save({ type: StorageType.ADDRESS, name: 'WrappedEther', value: WETH_ADDR })
     await Storage.save({ type: StorageType.ADDRESS, name: 'Stablecoin', value: STABLECOIN_ADDR })
 
@@ -53,7 +42,7 @@ const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
         tokenDatabase,
         whitelist,
     } = await deployProject({
-        gnosis: gnosisSafeAddress,
+        gnosis: GNOSIS_SAFE_ADDR,
         whitelistManager,
         weth,
         stablecoin,
@@ -173,14 +162,5 @@ const STABLECOIN_ADDR = '0x040c759e5c3dF9faA874002D5ac905D1AA5f56ec'
                 '0x',
             ],
         })
-    }
-
-    if (!await isContract(gnosisSafeAddress)) {
-        await GnosisDeployer.deployProxy(
-            gnosisSalt,
-            [owner],
-            1,
-            signer,
-        )
     }
 })()
