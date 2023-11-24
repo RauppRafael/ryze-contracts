@@ -46,7 +46,7 @@ export class GnosisDeployer {
         if (!await isContract(FACTORY_ADDRESS))
             throw new Error('Gnosis factory not available')
 
-        const factory = await GnosisSafeProxyFactory__factory.connect(
+        const factory = GnosisSafeProxyFactory__factory.connect(
             FACTORY_ADDRESS,
             hre.ethers.provider,
         )
