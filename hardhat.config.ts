@@ -67,8 +67,8 @@ function hardhatConfig({ version, compilers }: IHardhatConfig) {
                 ? { forking: { url: rpcs.mainnet[chain].url } }
                 : {},
             [network]: getNetworkBase({
-                url: rpcs.testnet[chain].url,
-                chainId: rpcs.testnet[chain].chainId,
+                url: rpcs[network][chain].url,
+                chainId: rpcs[network][chain].chainId,
             }),
         },
         etherscan: {
