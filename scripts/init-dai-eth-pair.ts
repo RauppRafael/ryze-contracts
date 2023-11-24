@@ -37,15 +37,18 @@ import { getDeadline, sendTransaction } from '../helpers/hardhat'
 
     await sendTransaction(stablecoin.approve(router.address, hre.ethers.constants.MaxUint256))
 
+    const amountEth = Hardhat.parseEther(0.05)
+    const amountStable = utils.parseUnits(ethPrice.toString(), stablecoinDecimals).div(1 / 0.05)
+
     await sendTransaction(
         router.addLiquidityETH(
             stablecoin.address,
-            utils.parseUnits(ethPrice.toString(), stablecoinDecimals),
-            0,
-            0,
+            amountStable,
+            amountStable.sub(amountStable.mul(3).div(100)),
+            amountEth.sub(amountEth.mul(3).div(100)),
             signer.address,
             await getDeadline(),
-            { value: Hardhat.parseEther(1) },
+            { value: amountEth },
         ),
     )
 
