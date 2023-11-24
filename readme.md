@@ -44,22 +44,23 @@
 
 ### Avalanche testnet
 
-| Name                        | Address                                                                                                                         | 
-|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------| 
-| WrappedEther                | [`0x1d308089a2d1ced3f1ce36b1fcaf815b07217be3`](https://testnet.snowtrace.io/address/0x1d308089a2d1ced3f1ce36b1fcaf815b07217be3) | 
-| Dai                         | [`0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23`](https://testnet.snowtrace.io/address/0xd74cab1b45aa372b0bbb7dcb9054cf4e24b58d23) | 
-| GnosisSafe                  | [`0xe35a6f9ea7a66d778f0a780ef2efe36ab1459930`](https://testnet.snowtrace.io/address/0xe35a6f9ea7a66d778f0a780ef2efe36ab1459930) | 
-| RyzeFactory                 | [`0x5afe00001e34209eafdfc18b91ae7b88cafc6b85`](https://testnet.snowtrace.io/address/0x5afe00001e34209eafdfc18b91ae7b88cafc6b85) | 
-| RyzeRouter                  | [`0x5afe0000f1a52f83ba75e3a2b7a7d5912069d3c2`](https://testnet.snowtrace.io/address/0x5afe0000f1a52f83ba75e3a2b7a7d5912069d3c2) | 
-| RyzeAllocationRewardToken   | [`0x5afe0000777be94ffdf6bfcce284956d4f554030`](https://testnet.snowtrace.io/address/0x5afe0000777be94ffdf6bfcce284956d4f554030) | 
-| RyzeAllocationToken         | [`0x5afe0000b27159f1cac5547e399e730d5789f6fb`](https://testnet.snowtrace.io/address/0x5afe0000b27159f1cac5547e399e730d5789f6fb) | 
-| RyzeRealEstateToken         | [`0x5afe0000f4f2065fb1c3733767ebbf450c88c8fd`](https://testnet.snowtrace.io/address/0x5afe0000f4f2065fb1c3733767ebbf450c88c8fd) | 
-| RyzeAllocator               | [`0x5afe0000ea67f7c282b8a227487d71d407aeedb4`](https://testnet.snowtrace.io/address/0x5afe0000ea67f7c282b8a227487d71d407aeedb4) | 
-| RyzeTokenDatabase           | [`0x5afe0000c70a02f26b9073e488813bd4002db814`](https://testnet.snowtrace.io/address/0x5afe0000c70a02f26b9073e488813bd4002db814) | 
-| RyzeTokenConverter          | [`0x5afe0000d99415485c6b16c410d3cf9f94cdcb4c`](https://testnet.snowtrace.io/address/0x5afe0000d99415485c6b16c410d3cf9f94cdcb4c) | 
-| RyzeLiquidityInitializer    | [`0x5afe00003cf348fe8137d55ce0938806add36661`](https://testnet.snowtrace.io/address/0x5afe00003cf348fe8137d55ce0938806add36661) | 
-| RyzeWhitelist               | [`0x5afe000088b1eca1cedab15383bf637c6404da96`](https://testnet.snowtrace.io/address/0x5afe000088b1eca1cedab15383bf637c6404da96) | 
-| EthDaiPair                  | [`0x8454c7e51bfe8f8fc05e98bf75311182c1057889`](https://testnet.snowtrace.io/address/0x8454c7e51bfe8f8fc05e98bf75311182c1057889) | 
+| Name                        | Address                                                                                                                | 
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------| 
+| GnosisSafe                  | [`0xf61079c96f3d8a77d3f2af2414ba42cf3a013638`](https://arbiscan.io/address/0xf61079c96f3d8a77d3f2af2414ba42cf3a013638) | 
+| WrappedEther                | [`0x82af49447d8a07e3bd95bd0d56f35241523fbab1`](https://arbiscan.io/address/0x82af49447d8a07e3bd95bd0d56f35241523fbab1) | 
+| Stablecoin                  | [`0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9`](https://arbiscan.io/address/0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9) | 
+| ProjectDeployer             | [`0x128ba04f794574cdcd683434774de447e938911d`](https://arbiscan.io/address/0x128ba04f794574cdcd683434774de447e938911d) | 
+| RyzeFactory                 | [`0x5afe0000755b5420596ede21a07f745c9414c1a0`](https://arbiscan.io/address/0x5afe0000755b5420596ede21a07f745c9414c1a0) | 
+| RyzeRouter                  | [`0x5afe0000b7ac7c5ca66cd0d874d6d00b6139538b`](https://arbiscan.io/address/0x5afe0000b7ac7c5ca66cd0d874d6d00b6139538b) | 
+| RyzeAllocationRewardToken   | [`0x5afe0000651264f85f9c0eba49f6f1e46c925c9a`](https://arbiscan.io/address/0x5afe0000651264f85f9c0eba49f6f1e46c925c9a) | 
+| RyzeAllocationToken         | [`0x5afe00004f0e9ee2370a5675908d08276d6d1d08`](https://arbiscan.io/address/0x5afe00004f0e9ee2370a5675908d08276d6d1d08) | 
+| RyzeRealEstateToken         | [`0x5afe0000780c21f394a441b343c9aa531f4a9b2e`](https://arbiscan.io/address/0x5afe0000780c21f394a441b343c9aa531f4a9b2e) | 
+| RyzeAllocator               | [`0x5afe00001924f15b5851f87b8d81c7486487ce12`](https://arbiscan.io/address/0x5afe00001924f15b5851f87b8d81c7486487ce12) | 
+| RyzeTokenDatabase           | [`0x5afe0000be56aaefffcf2c363be97d0abc7c3fbe`](https://arbiscan.io/address/0x5afe0000be56aaefffcf2c363be97d0abc7c3fbe) | 
+| RyzeTokenConverter          | [`0x5afe000016f8a453fd24e88cb43a9ddfbc311964`](https://arbiscan.io/address/0x5afe000016f8a453fd24e88cb43a9ddfbc311964) | 
+| RyzeLiquidityInitializer    | [`0x5afe0000c96c93c1da150ad146075d3086153ee9`](https://arbiscan.io/address/0x5afe0000c96c93c1da150ad146075d3086153ee9) | 
+| RyzeWhitelist               | [`0x5afe00007d78957cacaf2a3d25f6f0b8369b76d6`](https://arbiscan.io/address/0x5afe00007d78957cacaf2a3d25f6f0b8369b76d6) | 
+| EthStablecoinPair           | [`0xe4e6226856c68107444a851841bf86e17336d860`](https://arbiscan.io/address/0xe4e6226856c68107444a851841bf86e17336d860) | 
 
 ## Deploying / Running tests
 
