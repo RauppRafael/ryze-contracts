@@ -1,6 +1,6 @@
 import { constants } from 'ethers'
-import { getChainId } from './hardhat'
 import hre from 'hardhat'
+import { Salt, Storage, StorageType, VanityDeployer } from 'hardhat-vanity'
 import {
     Dai,
     Dai__factory,
@@ -9,14 +9,14 @@ import {
     RyzeFactory__factory,
     RyzeLiquidityInitializer__factory,
     RyzeRouter__factory,
+    RyzeToken__factory,
     RyzeTokenConverter__factory,
     RyzeTokenDatabase__factory,
-    RyzeToken__factory,
     RyzeWhitelist__factory,
     WrappedEther,
     WrappedEther__factory,
 } from '../types'
-import { Salt, VanityDeployer } from 'hardhat-vanity'
+import { getChainId } from './hardhat'
 
 let hashCount = 0
 
@@ -43,6 +43,12 @@ export const deployProject = async ({
 }) => {
     const [deployer] = await hre.ethers.getSigners()
     const projectDeployer = await new ProjectDeployer__factory(deployer).deploy()
+
+    await Storage.save({
+        type: StorageType.ADDRESS,
+        name: 'ProjectDeployer',
+        value: projectDeployer.address,
+    })
 
     const vanityDeployer = new VanityDeployer({
         startsWith: process.env.STARTS_WITH,
@@ -118,7 +124,7 @@ export const deployProject = async ({
     const liquidityInitializerSalt = await getImplementationAndProxySalt('RyzeLiquidityInitializer')
     const allocatorSalt = await getImplementationAndProxySalt('RyzeAllocator')
 
-    ;await (await projectDeployer.deployDex(
+    await (await projectDeployer.deployDex(
         gnosis,
         weth.address,
         {
@@ -131,7 +137,7 @@ export const deployProject = async ({
         },
     )).wait(confirmations)
 
-    ;await (await projectDeployer.deployTokens(
+    await (await projectDeployer.deployTokens(
         {
             allocationRewardTokenSalt,
             allocationTokenSalt,
@@ -143,7 +149,7 @@ export const deployProject = async ({
         },
     )).wait(confirmations)
 
-    ;await (await projectDeployer.deployProject(
+    await (await projectDeployer.deployProject(
         gnosis,
         whitelistManager,
         stablecoin.address,

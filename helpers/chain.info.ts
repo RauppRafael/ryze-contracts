@@ -1,4 +1,4 @@
-import explorerKeys from  '../.explorer-keys.json'
+import explorerKeys from '../.explorer-keys.json'
 
 type IRpcMap = {
     [n in Network]: {

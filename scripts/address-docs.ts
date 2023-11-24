@@ -7,7 +7,8 @@ interface ITableItem {
 }
 
 const PROXY = 'Proxy'
-const explorer = 'https://testnet.snowtrace.io/address/'
+// const explorer = 'https://testnet.snowtrace.io/address/'
+const explorer = 'https://arbiscan.io/address/'
 const paddingLength = explorer.length + 42 + 42 + 6
 
 const formatAddress = (address?: string) => {
